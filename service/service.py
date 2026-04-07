@@ -1,0 +1,1049 @@
+import bcrypt
+import json
+from datetime import datetime, timedelta, timezone
+from .config.connect_db import connect_db
+from sms.otpTemplate import send_otp_template
+from utils.generateOTP import generate_code
+from .rate_limit_service import RateLimitService
+from .models.user_model import User
+from .models.diagnostic_model import Diagnostic
+
+
+class DatabaseService:
+    def __init__(self):
+        self.user_table = "users"
+        self.diagnostic_table = "diagnostic"
+        self.conn = connect_db()
+        self.cursor = self.conn.cursor()
+        self.rate_limit = RateLimitService()
+        self.current_user = None
+
+    # REGISTER USER
+    def register(self, data: User, action="register"):
+
+        # RATE LIMIT CHECK
+        limit = self.rate_limit.check_rate_limit(
+            action=action,
+            identifier=data.email.lower(),
+            max_attempts=3,
+            lock_minutes=15,
+        )
+
+        if not limit["allowed"]:
+            return {
+                "status": "RATE_LIMITED",
+                "remaining": limit.get("remaining_seconds", 0),
+            }
+        try:
+            with self.conn.cursor() as cur:
+                # Check Duplicates
+                check_query = f"""
+                SELECT email, phone_number
+                FROM {self.user_table}
+                WHERE email = %s OR phone_number = %s
+                """
+                cur.execute(check_query, (data.email, data.phone_number))
+                existing = cur.fetchone()
+
+                if existing:
+                    return "USER_EXISTS"
+
+                hashed = bcrypt.hashpw(
+                    data.password.encode(), bcrypt.gensalt()
+                ).decode()
+
+                otp_code = str(generate_code())
+                otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=3)
+
+                insert_query = f"""
+                INSERT INTO {self.user_table}
+                (name, email, phone_number, password, role, otp_code, otp_expires_at, is_verified)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, name, email, phone_number
+                """
+
+                cur.execute(
+                    insert_query,
+                    (
+                        data.name,
+                        data.email,
+                        data.phone_number,
+                        hashed,
+                        data.role,
+                        otp_code,
+                        otp_expiry,
+                        False,
+                    ),
+                )
+
+                user = cur.fetchone()
+
+            self.conn.commit()
+
+            self.current_user = user
+
+            PHONE_NUM_DEV = "639628456672"
+            send_otp_template(PHONE_NUM_DEV, otp_code)
+
+            return user
+
+        except Exception as error:
+            print("REGISTER ERROR:", error)
+            return None
+
+    # VERIFY OTP
+    def verify_otp(self, phone_number, otp):
+
+        # CHECK IF LOCKED
+        lock = self.rate_limit.is_locked(
+            action="verify_otp",
+            identifier=phone_number,
+        )
+
+        if lock["locked"]:
+            return {
+                "status": "RATE_LIMITED",
+                "remaining": lock["remaining"],
+            }
+
+        try:
+            query = f"""
+            SELECT otp_code, otp_expires_at, recovery_setup
+            FROM {self.user_table}
+            WHERE phone_number = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (phone_number,))
+                result = cur.fetchone()
+
+            if not result:
+                return "USER_NOT_FOUND"
+
+            db_otp, expiry, recovery_setup = result
+
+            # SAFETY CHECK
+            if not expiry:
+                return "OTP_EXPIRED"
+
+            if datetime.now(timezone.utc) > expiry:
+                return "OTP_EXPIRED"
+
+            # WRONG OTP → increment rate limit
+            if db_otp != otp:
+
+                self.rate_limit.check_rate_limit(
+                    action="verify_otp",
+                    identifier=phone_number,
+                    max_attempts=5,
+                    lock_minutes=2,
+                )
+
+                return "INVALID_OTP"
+
+            # SUCCESS → verify user
+            update_query = f"""
+            UPDATE {self.user_table}
+            SET is_verified = TRUE,
+                otp_code = NULL,
+                otp_expires_at = NULL,
+                last_otp_verified_at = NOW()
+            WHERE phone_number = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(update_query, (phone_number,))
+
+            self.conn.commit()
+
+            # RESET RATE LIMIT
+            self.rate_limit.reset_rate_limit("verify_otp", phone_number)
+
+            # CHECK IF RECOVERY SETUP IS REQUIRED
+            if not recovery_setup:
+                return "SETUP_RECOVERY_REQUIRED"
+
+            return "VERIFIED"
+
+        except Exception as error:
+            print("VERIFY OTP ERROR:", error)
+            return "ERROR"
+
+    # RESEND OTP
+    def resend_otp(self, phone_number):
+        try:
+            otp_code = str(generate_code())
+            otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=3)
+
+            query = f"""
+            UPDATE {self.user_table}
+            SET otp_code = %s,
+                otp_expires_at = %s
+            WHERE phone_number = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (otp_code, otp_expiry, phone_number))
+
+            self.conn.commit()
+
+            PHONE_NUM_DEV = "639628456672"
+            send_otp_template(PHONE_NUM_DEV, otp_code)
+
+            return True
+
+        except Exception as error:
+            print(error)
+            return False
+
+    # RECOVERY QUESTIONS
+    def save_recovery_questions(self, email, city, mother_name, birthday):
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    f"""
+                    UPDATE {self.user_table}
+                    SET recovery_city = %s,
+                        recovery_mother_name = %s,
+                        recovery_birthday = %s,
+                        recovery_setup = TRUE
+                    WHERE email = %s
+                    RETURNING id
+                    """,
+                    (city, mother_name, birthday, email),
+                )
+
+                updated = cur.fetchone()
+
+            self.conn.commit()
+
+            if not updated:
+                return "USER_NOT_FOUND"
+
+            return "RECOVERY_SAVED"
+
+        except Exception as e:
+            print("RECOVERY SETUP ERROR:", e)
+            return "ERROR"
+
+    # LOGIN USER
+    def login(self, email, password):
+
+        email = email.lower().strip()
+        # CHECK IF LOCKED FIRST
+        lock = self.rate_limit.is_locked(
+            action="login",
+            identifier=email,
+        )
+
+        if lock["locked"]:
+            return {
+                "status": "RATE_LIMITED",
+                "remaining": lock["remaining"],
+            }
+
+        try:
+            query = f"""
+            SELECT id, name, email, phone_number, password, role, created_at,
+                is_verified, recovery_setup
+            FROM {self.user_table}
+            WHERE email = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (email,))
+                user = cur.fetchone()
+
+            if not user:
+                return "USER_NOT_FOUND"
+
+            db_password = user[4]
+            if isinstance(db_password, str):
+                db_password = db_password.encode()
+
+            is_verified = user[6]
+            recovery_setup = user[7]
+
+            # WRONG PASSWORD → increment limiter
+            if not bcrypt.checkpw(password.encode(), db_password):
+
+                self.rate_limit.check_rate_limit(
+                    action="login",
+                    identifier=email,
+                    max_attempts=5,
+                    lock_minutes=5,
+                )
+
+                return "INVALID_PASSWORD"
+
+            # SUCCESS → reset limiter
+            self.rate_limit.reset_rate_limit("login", email)
+
+            if not is_verified:
+                self.current_user = user
+                return "NOT_VERIFIED"
+
+            if not recovery_setup:
+                self.current_user = user
+                return "RECOVERY_SETUP_REQUIRED"
+
+            update_query = f"""
+            UPDATE {self.user_table}
+            SET last_login_at = NOW()
+            WHERE email = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(update_query, (email,))
+
+            self.conn.commit()
+
+            self.current_user = user
+            return "LOGIN_SUCCESS"
+
+        except Exception as error:
+            print("LOGIN ERROR:", error)
+            return "ERROR"
+
+    # GENERATE NEW OTP IF EXPIRED
+    def generate_and_send_otp(self, phone_number):
+        try:
+            otp_code = str(generate_code())
+            otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=3)
+
+            query = f"""
+            UPDATE {self.user_table}
+            SET otp_code = %s,
+                otp_expires_at = %s
+            WHERE phone_number = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (otp_code, otp_expiry, phone_number))
+
+            self.conn.commit()
+
+            PHONE_NUM_DEV = "639628456672"
+            send_otp_template(PHONE_NUM_DEV, otp_code)
+
+            return True
+
+        except Exception as error:
+            print(error)
+            return False
+
+    # FORGOT PASSWORD
+    def forgot_password(self, email):
+
+        # RATE LIMIT
+        rate = self.rate_limit.check_rate_limit(
+            action="forgot_password",
+            identifier=email,
+            max_attempts=3,
+            lock_minutes=5,
+        )
+
+        if not rate["allowed"]:
+            return {
+                "status": "RATE_LIMITED",
+                "remaining": rate["remaining_seconds"],
+            }
+
+        try:
+            query = f"""
+            SELECT id, name, email, phone_number
+            FROM {self.user_table}
+            WHERE email = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (email,))
+                user = cur.fetchone()
+
+            if not user:
+                return "USER_NOT_FOUND"
+
+            phone_number = user[3]
+
+            # GENERATE OTP
+            otp_code = str(generate_code())
+            otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=3)
+
+            update_query = f"""
+            UPDATE {self.user_table}
+            SET otp_code = %s,
+                otp_expires_at = %s
+            WHERE email = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(update_query, (otp_code, otp_expiry, email))
+
+            self.conn.commit()
+
+            # SEND OTP
+            PHONE_NUM_DEV = "639628456672"
+            send_otp_template(PHONE_NUM_DEV, otp_code)
+
+            # RESET RATE LIMIT (success)
+            self.rate_limit.reset_rate_limit("forgot_password", email)
+
+            # SAVE RECOVERY SESSION (NOT LOGIN SESSION)
+            self.recovery_user = user
+
+            return {
+                "status": "OTP_SENT",
+                "user": user,
+            }
+
+        except Exception as e:
+            print("FORGOT PASSWORD ERROR:", e)
+            return "ERROR"
+
+    # RECOVERY PASSWORD VERIFY OTP
+    def recovery_password(self, phone_number, otp):
+        # RATE LIMIT
+        rate = self.rate_limit.check_rate_limit(
+            action="recovery_otp",
+            identifier=phone_number,
+            max_attempts=5,
+            lock_minutes=5,
+        )
+
+        if not rate["allowed"]:
+            return {
+                "status": "RATE_LIMITED",
+                "remaining": rate["remaining_seconds"],
+            }
+
+        try:
+            query = f"""
+            SELECT otp_code, otp_expires_at
+            FROM {self.user_table}
+            WHERE phone_number = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (phone_number,))
+                result = cur.fetchone()
+
+            if not result:
+                return "USER_NOT_FOUND"
+
+            db_otp, expiry = result
+
+            if datetime.now(timezone.utc) > expiry:
+                return "OTP_EXPIRED"
+
+            if db_otp != otp:
+                return "INVALID_OTP"
+
+            # SUCCESS → reset limiter
+            self.rate_limit.reset_rate_limit("recovery_otp", phone_number)
+
+            return "VERIFIED"
+
+        except Exception as e:
+            print("RECOVERY OTP ERROR:", e)
+            return "ERROR"
+
+    # VERIFY RECOVERY QUESTIONS
+    def verify_recovery_question(self, email, city, mother_name, birthday):
+
+        # CHECK LOCK FIRST
+        lock = self.rate_limit.is_locked(
+            action="recovery_questions",
+            identifier=email,
+        )
+
+        if lock["locked"]:
+            return {
+                "status": "RATE_LIMITED",
+                "remaining": lock["remaining"],
+            }
+
+        try:
+            query = f"""
+            SELECT recovery_city,
+                recovery_mother_name,
+                recovery_birthday,
+                recovery_setup
+            FROM {self.user_table}
+            WHERE email = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (email,))
+                result = cur.fetchone()
+
+            if not result:
+                return "USER_NOT_FOUND"
+
+            db_city, db_mother, db_bday, recovery_setup = result
+
+            if not recovery_setup:
+                return "RECOVERY_NOT_SETUP"
+
+            # NORMALIZE (LOWERCASE + STRIP)
+            city = city.strip().lower()
+            mother_name = mother_name.strip().lower()
+
+            db_city = (db_city or "").strip().lower()
+            db_mother = (db_mother or "").strip().lower()
+
+            # birthday compare (string safe)
+            db_bday = str(db_bday)
+
+            # CHECK ANSWERS
+            if city != db_city or mother_name != db_mother or birthday != db_bday:
+
+                self.rate_limit.check_rate_limit(
+                    action="recovery_questions",
+                    identifier=email,
+                    max_attempts=5,
+                    lock_minutes=5,
+                )
+
+                return "INVALID_ANSWERS"
+
+            # SUCCESS → RESET LIMIT
+            self.rate_limit.reset_rate_limit(
+                "recovery_questions",
+                email,
+            )
+
+            return "VERIFIED"
+
+        except Exception as e:
+            print("RECOVERY VERIFY ERROR:", e)
+            return "ERROR"
+
+    # RESET PASSWORD
+    def reset_password(self, email, new_password):
+        try:
+            hashed = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+
+            query = f"""
+            UPDATE {self.user_table}
+            SET password = %s,
+                otp_code = NULL,
+                otp_expires_at = NULL
+            WHERE email = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (hashed, email))
+
+            self.conn.commit()
+            return "PASSWORD_RESET"
+
+        except Exception as e:
+            print("RESET PASSWORD ERROR:", e)
+            return "ERROR"
+
+    # LOGOUT USER
+    def logout(self):
+        try:
+            if not self.current_user:
+                return "NO_SESSION"
+
+            # CLEAR SESSION ONLY
+            self.current_user = None
+
+            return "LOGOUT_SUCCESS"
+
+        except Exception as error:
+            print("LOGOUT ERROR:", error)
+            return "ERROR"
+
+    # READ LOGIN USER DATA FROM THE QUESTION TABLE
+    def fetch_user_diagnosis(self, id):
+        try:
+            query = f"""
+            SELECT *
+            FROM {self.diagnostic_table}
+            WHERE patient_id = %s
+            ORDER BY created_at DESC
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (id,))
+                rows = cur.fetchall()
+
+            return rows
+
+        except Exception as error:
+            print(error)
+            return []
+
+    def save_temperature(self, patient_id, temp):
+        try:
+            query = f"""
+            INSERT INTO {self.diagnostic_table}
+            (patient_id, temp)
+            VALUES (%s, %s)
+            RETURNING id
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (patient_id, temp))
+
+                result = cur.fetchone()
+                question_id = result[0] if result else None
+
+            self.conn.commit()
+
+            return question_id
+
+        except Exception as error:
+            print("SAVE TEMPERATURE ERROR:", error)
+            return None
+
+    # PASS THE TEMPERATURE
+    def load_temperature(self, question_id):
+        try:
+            query = f"""
+            SELECT temp
+            FROM {self.diagnostic_table}
+            WHERE id = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (question_id,))
+                result = cur.fetchone()
+
+            return result[0] if result else None
+
+        except Exception as error:
+            print("LOAD TEMPERATURE ERROR:", error)
+            return None
+
+    def save_question_responses(
+        self,
+        question_id,
+        answers,
+        test_classification,
+        test_confidence,
+        top_patient_factors,
+    ):
+        try:
+            factors_json = json.dumps(
+                [{"feature": f, "score": float(s)} for f, s in top_patient_factors]
+            )
+
+            query = f"""
+            UPDATE {self.diagnostic_table}
+            SET
+                answers = %s,
+                test_classification = %s,
+                test_confidence = %s,
+                top_patient_factors = %s
+            WHERE id = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    query,
+                    (
+                        answers,
+                        test_classification,
+                        float(test_confidence),
+                        factors_json,
+                        question_id,
+                    ),
+                )
+
+            self.conn.commit()
+            return True
+
+        except Exception as error:
+            print("SAVE QUESTION ERROR:", error)
+            return False
+
+    def load_test_results(self, question_id):
+        try:
+            query = f"""
+            SELECT test_classification, test_confidence
+            FROM {self.diagnostic_table}
+            WHERE id = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (question_id,))
+                result = cur.fetchone()
+
+            if result:
+                return {
+                    "classification": result[0],
+                    "confidence": result[1],
+                }
+
+            return None
+
+        except Exception as error:
+            print("LOAD TEST RESULTS ERROR:", error)
+            return None
+
+    def save_eye_image(
+        self,
+        question_id,
+        eye_image_path,
+        eye_scan_path,
+        eye_classification,
+        eye_confidence,
+    ):
+        try:
+
+            query = f"""
+            UPDATE {self.diagnostic_table}
+            SET eye_image_path = %s,
+                eye_scan_path = %s,
+                eye_classification = %s,
+                eye_confidence = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    query,
+                    (
+                        eye_image_path,
+                        eye_scan_path,
+                        eye_classification,
+                        eye_confidence,
+                        question_id,
+                    ),
+                )
+
+            self.conn.commit()
+            return True
+
+        except Exception as error:
+            print("SAVE IMAGE ERROR:", error)
+            return False
+
+    def save_risk_and_recommendation(
+        self,
+        question_id,
+        risk_level,
+        recommendation,
+    ):
+        try:
+
+            query = f"""
+            UPDATE {self.diagnostic_table}
+            SET risk_level = %s,
+                recommendation = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    query,
+                    (
+                        risk_level,
+                        recommendation,
+                        question_id,
+                    ),
+                )
+
+            self.conn.commit()
+            return True
+
+        except Exception as error:
+            print("SAVE RISK ERROR:", error)
+            return False
+
+    # DISPLAY RESULTS
+    # def get_diagnosis_results(self, question_id):
+    #     try:
+    #         query = f"""
+    #         SELECT temperature, test_confidence, top_patient_factors,
+    #             eye_confidence, risk_level, recommendation
+    #         FROM {self.diagnostic_table}
+    #         WHERE id = %s
+    #         """
+
+    #         with self.conn.cursor() as cur:
+    #             cur.execute(query, (question_id,))
+    #             row = cur.fetchone()
+
+    #         return row
+
+    #     except Exception as error:
+    #         print("FETCH RESULT ERROR:", error)
+    #         return None
+
+    def get_diagnosis_results(self, question_id):
+        try:
+            query = f"""
+            SELECT temperature, test_classification, test_confidence, top_patient_factors, eye_classification, eye_confidence, risk_level, recommendation
+            FROM {self.diagnostic_table}
+            WHERE id = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (question_id,))
+                row = cur.fetchone()
+
+            if row:
+                return {
+                    "temperature": row[0],
+                    "test_classification": row[1],
+                    "test_confidence": row[2],
+                    "top_factors": row[3],
+                    "eye_classification": row[4],
+                    "eye_confidence": row[5],
+                    "risk_level": row[6],
+                    "recommendation": row[7],
+                }
+
+            return None
+
+        except Exception as error:
+            print("FETCH RESULT ERROR:", error)
+            return None
+
+    # GET RECEIPTS
+    def get_receipt_data(self, question_id):
+        try:
+            query = f"""
+            SELECT
+                q.id,
+                u.id,
+                u.name,
+                u.phone_number,
+                q.temp,
+                q.test_classification,
+                q.test_confidence,
+                q.eye_classification,
+                q.eye__confidence,
+                q.risk_level,
+                q.recommendation
+            FROM {self.diagnostic_table} q
+            JOIN {self.user_table} u
+            ON q.patient_id = u.id
+            WHERE q.id = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (question_id,))
+                row = cur.fetchone()
+
+            if not row:
+                return None
+
+            (
+                result_id,
+                patient_id,
+                patient_name,
+                phone_number,
+                temp,
+                test_classification,
+                test_confidence,
+                eye_classification,
+                eye_confidence,
+                risk_level,
+                recommendation,
+            ) = row
+
+            return {
+                "result_id": result_id,
+                "patient_id": patient_id,
+                "patient_name": patient_name,
+                "contact_number": phone_number,
+                "temp": float(temp),
+                "test_classification": test_classification,
+                "test_confidence": test_confidence,
+                "eye_classification": eye_classification,
+                "eye_confidence": eye_confidence,
+                "risk_level": risk_level,
+                "recommendation": recommendation,
+            }
+
+        except Exception as e:
+            print("receipt data error:", e)
+            return None
+
+    # SAVE PDF
+    def save_pdf_path(self, question_id, pdf_path):
+        try:
+            query = f"""
+            UPDATE {self.diagnostic_table}
+            SET pdf_path = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (pdf_path, question_id))
+
+            self.conn.commit()
+            return True
+
+        except Exception as e:
+            print("Save PDF Path Error:", e)
+            return False
+
+    # FETCH TOTAL USERS
+    def fetch_users(self):
+        pass
+
+    # FETCH NEW USERS
+    def fetch_new_users(self):
+        pass
+
+    # FETCH PATIENTS
+    def fetch_patients(self):
+        pass
+
+    # FETCH TOTAL USERS
+    def fetch_users(self):
+        pass
+
+    # FETCH NEW USERS
+    def fetch_new_users(self):
+        pass
+
+    # FETCH PERSONNEL
+    def fetch_personnel(self):
+        pass
+
+    # # EFFICIENT COUNTING FOR CARDS
+    # def count_user_tests(self, patient_id):
+    #     query = f"""
+    #     SELECT COUNT(*)
+    #     FROM {self.diagnostic_table}
+    #     WHERE patient_id = %s
+    #     """
+
+    #     with self.conn.cursor() as cur:
+    #         cur.execute(query, (patient_id,))
+    #         return cur.fetchone()[0]
+
+    # # ADMIN SIDE
+    # def fetch_patients_and_personnel(self):
+    #     try:
+    #         query = f"""
+    #         SELECT
+    #             id,
+    #             name,
+    #             role
+    #         FROM {self.user_table}
+    #         WHERE role IN ('patient', 'personnel')
+    #         ORDER BY created_at DESC
+    #         """
+
+    #         with self.conn.cursor() as cur:
+    #             cur.execute(query)
+    #             return cur.fetchall()
+
+    #     except Exception as error:
+    #         print(error)
+    #         return []
+    #     pass
+
+    # # FETCH PATIENTS
+    # def fetch_patients(self):
+    #     try:
+    #         query = f"""
+    #         SELECT
+    #             id,
+    #             name,
+    #             email
+    #         FROM {self.user_table}
+    #         WHERE role = 'patient'
+    #         ORDER BY created_at DESC
+    #         """
+
+    #         with self.conn.cursor() as cur:
+    #             cur.execute(query)
+    #             return cur.fetchall()
+
+    #     except Exception as error:
+    #         print(error)
+    #         return []
+
+    # # FETCH PERSONNEL
+    # def fetch_personnel(self):
+    #     try:
+    #         query = f"""
+    #         SELECT
+    #             id,
+    #             name,
+    #             email,
+    #             DATE(created_at),
+    #             DATE(updated_at)
+    #         FROM {self.user_table}
+    #         WHERE role = 'personnel'
+    #         ORDER BY created_at DESC
+    #         """
+
+    #         with self.conn.cursor() as cur:
+    #             cur.execute(query)
+    #             return cur.fetchall()
+
+    #     except Exception as error:
+    #         print(error)
+    #         return []
+
+    # # SEARCH PATIENT
+    # def search_patient(self, keyword):
+    #     try:
+    #         query = f"""
+    #         SELECT id, name, email, created_at, updated_at
+    #         FROM {self.user_table}
+    #         WHERE role = 'patient'
+    #         AND (
+    #             name ILIKE %s
+    #             OR email ILIKE %s
+    #         )
+    #         ORDER BY created_at DESC
+    #         """
+
+    #         search_term = f"%{keyword}%"
+
+    #         with self.conn.cursor() as cur:
+    #             cur.execute(query, (search_term, search_term))
+    #             return cur.fetchall()
+
+    #     except Exception as error:
+    #         print(error)
+    #         return []
+
+    # # SEARCH PATIENT AND PERSONNEL
+    # def search_patient_and_personnel(self, keyword):
+    #     try:
+    #         query = f"""
+    #         SELECT id, name, role
+    #         FROM {self.user_table}
+    #         WHERE role IN ('patient', 'personnel')
+    #         AND (
+    #             name ILIKE %s
+    #             OR role::text ILIKE %s
+    #         )
+    #         ORDER BY created_at DESC
+    #         """
+
+    #         term = f"%{keyword}%"
+
+    #         with self.conn.cursor() as cur:
+    #             cur.execute(query, (term, term))
+    #             return cur.fetchall()
+
+    #     except Exception as error:
+    #         print(error)
+    #         return []
+
+    def close(self):
+        self.cursor.close()
+        self.conn.close()
+
+
+# EX:
+# db = DatabaseService()
+# user = User(temp=0.01, answers=["Yes", "No"])
+
+# db.save_response(user)
