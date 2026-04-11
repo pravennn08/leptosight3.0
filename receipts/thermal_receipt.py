@@ -15,14 +15,14 @@ class ThermalPrinter:
         self.BOLD_OFF = b"\x1b\x45\x00"
         self.CUT = b"\x1d\x56\x00"
 
-    # ---------- BASIC WRITE ----------
+    # BASIC WRITE
     def write(self, text):
         self.printer.write(text.encode("utf-8"))
 
     def write_raw(self, data):
         self.printer.write(data)
 
-    # ---------- STYLES ----------
+    # STYLES
     def center(self):
         self.write_raw(self.CENTER)
 
@@ -38,7 +38,7 @@ class ThermalPrinter:
     def line(self):
         self.write("-" * self.max_chars + "\n")
 
-    # ---------- SECTION HEADER ----------
+    #  SECTION HEADER
     def section(self, title):
         self.center()
         self.bold_on()
@@ -47,7 +47,7 @@ class ThermalPrinter:
         self.write("-" * self.max_chars + "\n")
         self.bold_off()
 
-    # ---------- KEY VALUE ALIGN ----------
+    #  KEY VALUE ALIGN
     def kv(self, key, value):
         key = f"{key}:"
         spacing = 16 - len(key)
@@ -56,7 +56,7 @@ class ThermalPrinter:
         line = key + (" " * spacing) + str(value)
         self.write(line + "\n")
 
-    # ---------- DATE TIME ----------
+    #  DATE TIME
     def print_datetime_line(self):
         now = datetime.now()
 
@@ -73,7 +73,7 @@ class ThermalPrinter:
         line = left + (" " * spaces) + right
         self.write(line + "\n")
 
-    # ---------- WRAP TEXT ----------
+    #  WRAP TEXT
     def wrapped_text(self, text):
         words = text.split(" ")
         line = ""
@@ -106,7 +106,7 @@ class ThermalPrinter:
         if line:
             self.write(line + "\n")
 
-    # ---------- MAIN REPORT ----------
+    #  MAIN REPORT
     def print_report(
         self,
         patient_id,
@@ -163,12 +163,12 @@ class ThermalPrinter:
         # CUT PAPER
         self.write_raw(self.CUT)
 
-    # ---------- CLOSE ----------
+    #  CLOSE
     def close(self):
         self.printer.close()
 
 
-# # ---------- SAMPLE USAGE ----------
+# #  SAMPLE USAGE
 # if __name__ == "__main__":
 #     printer = ThermalPrinter(device="/dev/usb/lp0")
 

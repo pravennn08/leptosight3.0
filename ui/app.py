@@ -30,10 +30,13 @@ class App(ctk.CTk):
         self.geometry("1200x700")
         self.configure(fg_color=BACKGROUND)
 
+        # PAGES
         self.frames = {}
 
+        # DB SERVICE
         self.db = DatabaseService()
 
+        # AUTH SESSION
         self.current_user = None
         self.recovery_user = None
         self.current_question_id = None
@@ -57,7 +60,12 @@ class App(ctk.CTk):
 
         # CONTENT
         self.content = ctk.CTkFrame(self.container, fg_color="transparent")
-        self.content.pack(fill="both", expand=True, padx=(10, 20), pady=(0, 10))
+        self.content.pack(
+            fill="both",
+            expand=True,
+            padx=(10, 20),
+            pady=(0, 10),
+        )
 
         # AUTH PAGES
         self.frames["SignInPage"] = SignInPage(self, self)
@@ -75,7 +83,7 @@ class App(ctk.CTk):
         self.frames["RecordsPage"] = RecordsPage(self.content, self)
         self.frames["ProfilePage"] = ProfilePage(self.content, self)
 
-        # PATIENT-SIDE PAGES
+        # ADMIN/PERSONNEL-SIDE PAGES
         self.frames["DashboardPage"] = DashboardPage(self.content, self)
         self.frames["PatientRecordsPage"] = PatientRecordsPage(self.content, self)
         self.frames["UsersPage"] = UsersPage(self.content, self)
@@ -83,6 +91,7 @@ class App(ctk.CTk):
 
         self.change_window("SignInPage")
 
+    # CHANGE WINDOW
     def change_window(self, name):
         for frame in self.frames.values():
             frame.pack_forget()

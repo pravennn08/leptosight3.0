@@ -52,7 +52,7 @@ class HomePage(ctk.CTkFrame):
         self.welcome_frame.place(x=0, y=0)
 
         self.icons = [self.test_icon, self.report_icon, self.calendar_icon]
-        self.colors = [GREEN, VIOLET, PINK]
+        self.colors = [BLUE, VIOLET, PINK]
 
         self.bell_container = Avatar(
             self.welcome_frame,
@@ -63,7 +63,7 @@ class HomePage(ctk.CTkFrame):
         )
         self.bell_container.place(x=30, y=20)
         self.welcome_label = ctk.CTkLabel(
-            self.welcome_frame, text="Welcome, Raven!", font=("Inter", 25)
+            self.welcome_frame, text="", font=("Inter", 25)
         )
         self.welcome_label.place(x=110, y=30)
 
@@ -117,7 +117,7 @@ class HomePage(ctk.CTkFrame):
 
         self.last_activity_label = ctk.CTkLabel(
             self.last_activity_frame,
-            text="5 days ago",
+            text="",
             font=("Poppins", 19),
             text_color=TEXT_SECONDARY,
         )
@@ -156,7 +156,7 @@ class HomePage(ctk.CTkFrame):
             self.line_inner,
             title="Historic Progress",
             lines_config=[
-                {"key": "test", "label": "Test Confidence", "color": GREEN},
+                {"key": "test", "label": "Test Confidence", "color": BLUE},
                 {"key": "eye", "label": "Eye Scan Confidence", "color": VIOLET},
                 {"key": "temp", "label": "Body Temp", "color": YELLOW},
             ],
@@ -238,26 +238,48 @@ class HomePage(ctk.CTkFrame):
             ).place(x=40, y=50)
 
     def on_show(self):
+        user = self.controller.current_user
+
+        if not user:
+            return
+
+        user_id = user[0]
+        user_name = user[1]
+        self.welcome_label.configure(text=f"Welcome, {user_name}!")
+
+        stats = self.db.fetch_patient_diagnosis_stats(user_id)
+
+        if not stats:
+            stats = {
+                "total_tests": 0,
+                "total_reports": 0,
+                "last_test_date": "N/A",
+                "last_activity": "No activity",
+            }
+
         self.home_cards_data = [
-            {"title": "Total Test Taken", "value": "22"},
-            {"title": "Reports Generated", "value": "22"},
-            {"title": "Last Test Date", "value": "Apr 20"},
+            {"title": "Total Test Taken", "value": stats["total_tests"]},
+            {"title": "Reports Generated", "value": stats["total_reports"]},
+            {"title": "Last Test Date", "value": stats["last_test_date"]},
         ]
+
         self.build_home_cards()
 
-        data = [
-            {"session": "Session 1", "test": 100, "eye": 70, "temp": 36.8},
-            {"session": "Session 2", "test": 85, "eye": 75, "temp": 40.8},
-            {"session": "Session 3", "test": 88, "eye": 80, "temp": 38.8},
-            {"session": "Session 4", "test": 90, "eye": 82, "temp": 39.8},
-            {"session": "Session 5", "test": 92, "eye": 85, "temp": 37.8},
-        ]
-        self.after(500, lambda: self.line_chart.update_chart(data))
+        self.last_activity_label.configure(text=stats["last_activity"])
 
-        data2 = [
-            {"classification": "Safe", "value": 1},
-            {"classification": "Mild", "value": 0},
-            {"classification": "Moderate", "value": 10},
-            {"classification": "Severe", "value": 20},
-        ]
-        self.after(500, lambda: self.bar_chart.update_chart(data2))
+        line_chart_data = self.db.get_line_chart_data(user_id)
+        if not line_chart_data:
+            line_chart_data = {"session": "Session 1", "test": 0.00, "eye": 0.00}
+        self.after(500, lambda: self.line_chart.update_chart(line_chart_data))
+
+        bar_chart_data = self.db.get_bar_chart_data(user_id)
+
+        if not bar_chart_data:
+            bar_chart_data = {
+                "Safe": 0,
+                "Mild": 0,
+                "Moderate": 0,
+                "Severe": 0,
+            }
+
+        self.after(500, lambda: self.bar_chart.update_chart(bar_chart_data))

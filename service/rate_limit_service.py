@@ -8,6 +8,7 @@ class RateLimitService:
         self.conn = connect_db()
         self.cursor = self.conn.cursor()
 
+    # CHECK RATE LIMIT
     def check_rate_limit(self, action, identifier, max_attempts, lock_minutes):
         try:
             query = """
@@ -70,6 +71,7 @@ class RateLimitService:
             print(e)
             return {"allowed": False}
 
+    # CHECK IF IS LOCKED RATE LIMIT
     def is_locked(self, action, identifier):
         query = """
         SELECT locked_until
@@ -92,6 +94,7 @@ class RateLimitService:
 
         return {"locked": False}
 
+    # RESET RATE LIMIT
     def reset_rate_limit(self, action, identifier):
         query = """
         UPDATE rate_limits

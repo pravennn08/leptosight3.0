@@ -39,9 +39,9 @@ class AnimatedBarChart(ctk.CTkFrame):
             width=180,
             height=36,
             font=("Inter", 18),
-            fg_color="#0EA5E9",  # main blue
-            button_color="#0284C7",  # darker blue
-            button_hover_color="#0369A1",
+            fg_color="#14B8A6",
+            button_color="#0D9488",
+            button_hover_color="#13857B",
             text_color="#FFFFFF",
             dropdown_fg_color="#FFFFFF",
             dropdown_text_color="#0F172A",

@@ -556,26 +556,339 @@ class DatabaseService:
             print("LOGOUT ERROR:", error)
             return "ERROR"
 
-    # READ LOGIN USER DATA FROM THE QUESTION TABLE
-    def fetch_user_diagnosis(self, id):
+    # FETCH LOGIN USER DIAGNOSTIC STATS
+    def fetch_patient_diagnosis_stats(self, patient_id):
         try:
             query = f"""
-            SELECT *
+            SELECT
+                COUNT(*) AS total_tests,
+                COUNT(pdf_path) AS total_reports,
+                MAX(created_at) AS last_test_date,
+                MAX(updated_at) AS last_activity
             FROM {self.diagnostic_table}
-            WHERE patient_id = %s
-            ORDER BY created_at DESC
+            WHERE patient_id = %s;
             """
 
             with self.conn.cursor() as cur:
-                cur.execute(query, (id,))
-                rows = cur.fetchall()
+                cur.execute(query, (patient_id,))
+                result = cur.fetchone()
 
-            return rows
+            if not result:
+                return None
+
+            total_tests, total_reports, last_test_date, last_activity = result
+
+            # FORMAT DATE → Apr 8
+            formatted_date = (
+                last_test_date.strftime("%b %d") if last_test_date else "N/A"
+            )
+
+            # TIME AGO FORMAT
+            def time_ago(dt):
+                if not dt:
+                    return "No activity"
+
+                now = datetime.now(dt.tzinfo)
+                diff = now - dt
+
+                seconds = int(diff.total_seconds())
+
+                if seconds < 60:
+                    return "Just now"
+                elif seconds < 3600:
+                    mins = seconds // 60
+                    return f"{mins} minute{'s' if mins > 1 else ''} ago"
+                elif seconds < 86400:
+                    hours = seconds // 3600
+                    return f"{hours} hour{'s' if hours > 1 else ''} ago"
+                else:
+                    days = seconds // 86400
+                    return f"{days} day{'s' if days > 1 else ''} ago"
+
+            return {
+                "total_tests": total_tests,
+                "total_reports": total_reports,
+                "last_test_date": formatted_date,
+                "last_activity": time_ago(last_activity),
+            }
 
         except Exception as error:
-            print(error)
+            print("FETCH DIAGNOSIS STATS ERROR:", error)
+            return None
+
+    # FETCH LINE CHART DATA
+    def get_line_chart_data(self, patient_id):
+        try:
+            with self.conn.cursor() as cur:
+
+                # ✅ TOTAL COUNT
+                count_query = f"""
+                SELECT COUNT(*)
+                FROM {self.diagnostic_table}
+                WHERE patient_id = %s;
+                """
+                cur.execute(count_query, (patient_id,))
+                total_sessions = cur.fetchone()[0]
+
+                # ✅ LAST 5 SESSIONS
+                query = f"""
+                SELECT
+                    id,
+                    temp,
+                    test_confidence,
+                    eye_confidence
+                FROM {self.diagnostic_table}
+                WHERE patient_id = %s
+                ORDER BY created_at DESC
+                LIMIT 5;
+                """
+                cur.execute(query, (patient_id,))
+                rows = cur.fetchall()
+
+            if not rows:
+                return []
+
+            # Reverse  oldest to newest
+            rows.reverse()
+
+            #  Compute starting session number
+            start_session = max(1, total_sessions - len(rows) + 1)
+
+            line_chart_data = []
+
+            for i, row in enumerate(rows):
+                _, temp, test_conf, eye_conf = row
+
+                session_number = start_session + i
+
+                line_chart_data.append(
+                    {
+                        "session": f"Session {session_number}",
+                        "test": float(test_conf or 0),
+                        "eye": float(eye_conf or 0),
+                        "temp": float(temp or 0),
+                    }
+                )
+
+            return line_chart_data
+
+        except Exception as error:
+            print("LINE CHART ERROR:", error)
             return []
 
+    # FETCH BAR CHART DATA (risk_level)
+    def get_bar_chart_data(self, patient_id):
+        try:
+            query = f"""
+            SELECT
+                eye_classification,
+                COUNT(*) AS total
+            FROM {self.diagnostic_table}
+            WHERE patient_id = %s
+            GROUP BY eye_classification;
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (patient_id,))
+                rows = cur.fetchall()
+
+            # ✅ Default categories (always shown)
+            categories = {
+                "Safe": 0,
+                "Mild": 0,
+                "Moderate": 0,
+                "Severe": 0,
+            }
+
+            # Fill actual data
+            for classification, count in rows:
+                if classification in categories:
+                    categories[classification] = count
+
+            # Convert to UI format
+            bar_chart_data = [
+                {"classification": key, "value": value}
+                for key, value in categories.items()
+            ]
+
+            return bar_chart_data
+
+        except Exception as error:
+            print("BAR CHART ERROR:", error)
+            return []
+
+    # # FETCH PATIENT RECORDS BASED ON LOGIN PATIENT
+    # def fetch_patient_records(self, patient_id):
+    #     try:
+    #         query = f"""
+    #         SELECT
+    #             id,
+    #             temp,
+    #             test_classification,
+    #             eye_classification,
+    #             risk_level
+    #         FROM {self.diagnostic_table}
+    #         WHERE patient_id = %s
+    #         ORDER BY created_at ASC;
+    #         """
+
+    #         with self.conn.cursor() as cur:
+    #             cur.execute(query, (patient_id,))
+    #             rows = cur.fetchall()
+
+    #         if not rows:
+    #             return []
+
+    #         table_data = []
+
+    #         for row in rows:
+    #             diag_id, temp, test_class, eye_class, risk = row
+
+    #             table_data.append(
+    #                 (
+    #                     f"D{diag_id}",
+    #                     f"{float(temp):.1f}°C" if temp else "N/A",
+    #                     test_class or "N/A",
+    #                     eye_class or "N/A",
+    #                     f"{float(risk):.2f}" if risk else "N/A",
+    #                 )
+    #             )
+
+    #         return table_data
+
+    #     except Exception as error:
+    #         print("FETCH RECORDS ERROR:", error)
+    #         return []
+
+    def fetch_patient_records(self, patient_id):
+        try:
+            query = f"""
+            SELECT
+                id,
+                temp,
+                test_classification,
+                test_confidence,
+                eye_classification,
+                eye_confidence,
+                risk_level,
+                recommendation,
+                created_at,
+                answers,
+                top_patient_factors,
+                eye_image_path,
+                eye_scan_path
+            FROM {self.diagnostic_table}
+            WHERE patient_id = %s
+            ORDER BY created_at ASC;
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (patient_id,))
+                rows = cur.fetchall()
+
+            results = []
+
+            for row in rows:
+                (
+                    diag_id,
+                    temp,
+                    test_class,
+                    test_conf,
+                    eye_class,
+                    eye_conf,
+                    risk,
+                    recommendation,
+                    created_at,
+                    answers,
+                    factors,
+                    eye_img,
+                    eye_scan,
+                ) = row
+
+                results.append(
+                    {
+                        "id": diag_id,
+                        "display": (
+                            f"D{diag_id}",
+                            f"{float(temp):.1f}°C" if temp else "N/A",
+                            test_class or "N/A",
+                            eye_class or "N/A",
+                            f"{float(risk):.2f}" if risk else "N/A",
+                        ),
+                        "full": {
+                            "id": diag_id,
+                            "temp": temp,
+                            "test_class": test_class,
+                            "test_conf": test_conf,
+                            "eye_class": eye_class,
+                            "eye_conf": eye_conf,
+                            "risk": risk,
+                            "recommendation": recommendation,
+                            "created_at": created_at,
+                            "answers": answers,
+                            "factors": factors,
+                            "eye_image": eye_img,
+                            "eye_scan": eye_scan,
+                        },
+                    }
+                )
+
+            return results
+
+        except Exception as error:
+            print("FETCH RECORDS ERROR:", error)
+            return []
+
+    # SEARCH PATIENT RECORD BASED ON LOGIN PATIENT
+    def search_patient_records(self, patient_id, keyword):
+        try:
+            query = f"""
+            SELECT
+                id,
+                temp,
+                test_classification,
+                eye_classification,
+                risk_level
+            FROM {self.diagnostic_table}
+            WHERE patient_id = %s
+            AND (
+                CAST(id AS TEXT) ILIKE %s OR
+                CAST(temp AS TEXT) ILIKE %s OR
+                test_classification ILIKE %s OR
+                eye_classification ILIKE %s OR
+                CAST(risk_level AS TEXT) ILIKE %s
+            )
+            ORDER BY created_at DESC;
+            """
+
+            search = f"%{keyword}%"
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (patient_id, search, search, search, search, search))
+                rows = cur.fetchall()
+
+            table_data = []
+
+            for row in rows:
+                diag_id, temp, test_class, eye_class, risk = row
+
+                table_data.append(
+                    (
+                        f"D{diag_id}",
+                        f"{float(temp):.1f}°C" if temp else "N/A",
+                        test_class or "N/A",
+                        eye_class or "N/A",
+                        f"{float(risk):.2f}" if risk else "N/A",
+                    )
+                )
+
+            return table_data
+
+        except Exception as error:
+            print("SEARCH ERROR:", error)
+            return []
+
+    # SAVE PATIENT TEMPERATURE
     def save_temperature(self, patient_id, temp):
         try:
             query = f"""
@@ -755,26 +1068,6 @@ class DatabaseService:
         except Exception as error:
             print("SAVE RISK ERROR:", error)
             return False
-
-    # DISPLAY RESULTS
-    # def get_diagnosis_results(self, question_id):
-    #     try:
-    #         query = f"""
-    #         SELECT temperature, test_confidence, top_patient_factors,
-    #             eye_confidence, risk_level, recommendation
-    #         FROM {self.diagnostic_table}
-    #         WHERE id = %s
-    #         """
-
-    #         with self.conn.cursor() as cur:
-    #             cur.execute(query, (question_id,))
-    #             row = cur.fetchone()
-
-    #         return row
-
-    #     except Exception as error:
-    #         print("FETCH RESULT ERROR:", error)
-    #         return None
 
     def get_diagnosis_results(self, question_id):
         try:

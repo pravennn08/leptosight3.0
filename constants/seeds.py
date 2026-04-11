@@ -89,7 +89,6 @@ INSTRUCTIONS = [
 ]
 
 # CAMERA TIPS
-
 CAMERA_TIPS = [
     {
         "title": "Camera at eye level",
