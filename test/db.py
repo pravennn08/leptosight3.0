@@ -3,10 +3,11 @@ from tkinter import ttk
 import psycopg2
 import os
 from dotenv import load_dotenv
+from psycopg2 import sql
 
 load_dotenv()
 
-ctk.set_appearance_mode("light")  # or "dark"
+ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
 
@@ -47,7 +48,6 @@ class DBViewer(ctk.CTk):
         self.control_frame = ctk.CTkFrame(self, height=80)
         self.control_frame.pack(fill="x", padx=20, pady=10)
 
-        # Table selector
         self.table_option = ctk.CTkOptionMenu(
             self.control_frame,
             values=["users", "diagnostic", "rate_limits"],
@@ -57,7 +57,6 @@ class DBViewer(ctk.CTk):
         self.table_option.set("users")
         self.table_option.pack(side="left", padx=10, pady=20)
 
-        # Refresh button
         self.refresh_btn = ctk.CTkButton(
             self.control_frame,
             text="Refresh",
@@ -71,7 +70,7 @@ class DBViewer(ctk.CTk):
         self.table_frame = ctk.CTkFrame(self)
         self.table_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-        # Treeview (table)
+        # ===== STYLE =====
         style = ttk.Style()
         style.theme_use("default")
 
@@ -85,19 +84,35 @@ class DBViewer(ctk.CTk):
 
         style.configure("Treeview.Heading", font=("Poppins", 12, "bold"))
 
-        self.tree = ttk.Treeview(self.table_frame)
+        # ===== SCROLLBARS =====
+        self.scrollbar_y = ttk.Scrollbar(self.table_frame, orient="vertical")
+        self.scrollbar_y.pack(side="right", fill="y")
+
+        self.scrollbar_x = ttk.Scrollbar(self.table_frame, orient="horizontal")
+        self.scrollbar_x.pack(side="bottom", fill="x")
+
+        # ===== TREEVIEW =====
+        self.tree = ttk.Treeview(
+            self.table_frame,
+            yscrollcommand=self.scrollbar_y.set,
+            xscrollcommand=self.scrollbar_x.set,
+        )
         self.tree.pack(fill="both", expand=True)
 
-        # Bind events
+        self.scrollbar_y.config(command=self.tree.yview)
+        self.scrollbar_x.config(command=self.tree.xview)
+
         self.tree.bind("<ButtonRelease-1>", self.on_cell_click)
         self.tree.bind("<Double-1>", self.on_double_click)
 
-        # ===== CELL VIEWER =====
+        # ===== CELL VIEW =====
         self.cell_frame = ctk.CTkFrame(self)
         self.cell_frame.pack(fill="x", padx=20, pady=(0, 10))
 
         self.cell_label = ctk.CTkLabel(
-            self.cell_frame, text="Selected Cell Value:", font=("Poppins", 14, "bold")
+            self.cell_frame,
+            text="Selected Cell Value:",
+            font=("Poppins", 14, "bold"),
         )
         self.cell_label.pack(anchor="w", padx=10, pady=(10, 5))
 
@@ -113,7 +128,6 @@ class DBViewer(ctk.CTk):
         )
         self.copy_btn.pack(anchor="e", padx=10, pady=10)
 
-        # Load initial data
         self.load_data()
 
     def on_table_change(self, value):
@@ -129,9 +143,16 @@ class DBViewer(ctk.CTk):
         cursor = conn.cursor()
 
         try:
-            cursor.execute(f"SELECT * FROM {table_name}")
+            cursor.execute(
+                sql.SQL("SELECT * FROM {} ORDER BY id ASC").format(
+                    sql.Identifier(table_name)
+                )
+            )
+
             rows = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
+
+            print(f"[DEBUG] Loaded {len(rows)} rows")
 
             # Clear table
             self.tree.delete(*self.tree.get_children())
@@ -142,9 +163,9 @@ class DBViewer(ctk.CTk):
 
             for col in colnames:
                 self.tree.heading(col, text=col)
-                self.tree.column(col, width=120, anchor="center")
+                self.tree.column(col, width=150, anchor="center")
 
-            # Insert data
+            # Insert rows
             for row in rows:
                 self.tree.insert("", "end", values=row)
 
@@ -156,27 +177,34 @@ class DBViewer(ctk.CTk):
             conn.close()
 
     def on_cell_click(self, event):
-        selected_item = self.tree.focus()
-        if not selected_item:
-            return
-
-        # Detect region
-        region = self.tree.identify("region", event.x, event.y)
-        if region != "cell":
-            return
-
-        # Get column index
+        row_id = self.tree.identify_row(event.y)
         col = self.tree.identify_column(event.x)
-        col_index = int(col.replace("#", "")) - 1
 
-        values = self.tree.item(selected_item, "values")
+        if not row_id:
+            return
 
-        if col_index < len(values):
-            cell_value = str(values[col_index])
+        display_index = int(col.replace("#", "")) - 1
+        columns = self.tree["columns"]
 
-            # Show value
+        if display_index >= len(columns):
+            return
+
+        column_name = columns[display_index]
+        values = self.tree.item(row_id, "values")
+
+        if display_index < len(values):
+            cell_value = str(values[display_index])
+
             self.cell_value.delete("1.0", "end")
             self.cell_value.insert("1.0", cell_value)
+
+            self.cell_label.configure(
+                text=f"Selected Cell ({column_name}) [Index {display_index}]:"
+            )
+
+            print(
+                f"[DEBUG] Column: {column_name} | Index: {display_index} | Value: {cell_value}"
+            )
 
     def on_double_click(self, event):
         self.copy_cell_value()

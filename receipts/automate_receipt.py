@@ -14,7 +14,7 @@ class AutomateReceipt:
         patient_name="",
         contact_number="",
         temperature=0,
-        test_result="",
+        test_classification="",
         test_confidence="",
         eye_classification="",
         eye_confidence="",
@@ -30,7 +30,7 @@ class AutomateReceipt:
         self.patient_name = patient_name
         self.contact_number = contact_number
         self.temperature = temperature
-        self.test_result = test_result
+        self.test_classification = test_classification
         self.test_confidence = test_confidence
         self.eye_classification = eye_classification
         self.eye_confidence = eye_confidence
@@ -131,10 +131,10 @@ class AutomateReceipt:
         self.add(self.line)
 
         self.add(self.kv_center("Temperature", f"{self.temperature:.1f} C"))
-        self.add(self.kv_center("Test Result", self.test_result))
-        self.add(self.kv_center("Test Confidence", self.test_confidence))
+        self.add(self.kv_center("Test Result", self.test_classification))
+        self.add(self.kv_center("Test Confidence", f"{self.test_confidence}%"))
         self.add(self.kv_center("Eye Class", self.eye_classification))
-        self.add(self.kv_center("Eye Confidence", self.eye_confidence))
+        self.add(self.kv_center("Eye Confidence", f"{self.eye_confidence}%"))
 
         self.add(self.line)
 

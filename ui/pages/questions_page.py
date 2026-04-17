@@ -11,18 +11,19 @@ from constants.seeds import (
     STRUCTURED_QUESTIONS as questionaires,
 )
 from ..components.avatar import Avatar
-from ..components.messagebox import MessageBox as mb
+from CTkMessagebox import CTkMessagebox as mb
 from models.test_classification_model import TestClassificationModel
+import threading
 
 
 class QuestionsPage(ctk.CTkFrame):
     def __init__(self, master, controller):
         super().__init__(
             master,
-            # fg_color="transparent",
-            fg_color="#F8FAFC",
-            border_width=2,
-            border_color="#E2E8F0",
+            fg_color="transparent",
+            # fg_color="#F8FAFC",
+            # border_width=2,
+            # border_color="#E2E8F0",
             corner_radius=15,
         )
         self.controller = controller
@@ -30,7 +31,7 @@ class QuestionsPage(ctk.CTkFrame):
         self.test_model = TestClassificationModel()
 
         # ICONS
-        self.question_icon = ctk.CTkImage(Image.open(QUESTIONS), size=(50, 50))
+        self.question_icon = ctk.CTkImage(Image.open(QUESTIONS), size=(40, 40))
         self.prev_icon = ctk.CTkImage(Image.open(CHEVRON_LEFT), size=(40, 40))
         self.next_icon = ctk.CTkImage(Image.open(CHEVRON_RIGHT), size=(40, 40))
 
@@ -41,15 +42,27 @@ class QuestionsPage(ctk.CTkFrame):
         self.is_translated = False
         self.answer_var = ctk.StringVar()
 
-        ctk.CTkLabel(self, text="QUESTIONS").pack(expand=True)
+        ctk.CTkLabel(
+            self,
+            text="Symptom Assessment Questionnaire",
+            font=("Inter", 30, "bold"),
+            text_color=TEXT_PRIMARY,
+        ).place(x=40, y=10)
+
+        ctk.CTkLabel(
+            self,
+            text="Please answer all questions honestly based on your current condition.",
+            font=("Poppins", 20),
+            text_color=TEXT_SECONDARY,
+        ).place(x=40, y=50)
 
         self.pagination_label = ctk.CTkLabel(
             self,
             text="Questions 1 of 20",
-            font=("Inter", 20),
+            font=("Inter", 18),
             text_color=TEXT_SECONDARY,
         )
-        self.pagination_label.place(x=40, y=40)
+        self.pagination_label.place(x=40, y=90)
 
         self.progress_bar = ctk.CTkProgressBar(
             self,
@@ -61,7 +74,7 @@ class QuestionsPage(ctk.CTkFrame):
             mode="determinate",
         )
         self.progress_bar.set(0)
-        self.progress_bar.place(x=40, y=80)
+        self.progress_bar.place(x=40, y=130)
 
         self.percent_label = ctk.CTkLabel(
             self,
@@ -69,23 +82,24 @@ class QuestionsPage(ctk.CTkFrame):
             font=("Poppins", 18),
             text_color=TEXT_SECONDARY,
         )
-        self.percent_label.place(x=1200, y=40)
+        self.percent_label.place(x=1200, y=90)
 
         self.questions_container = ctk.CTkFrame(
             self,
-            fg_color="#F8FAFC",
+            # fg_color="#FFFFFF",
+            fg_color="#E2E8F0",
+            corner_radius=15,
             border_width=2,
             border_color="#E2E8F0",
-            corner_radius=20,
             width=1300,
-            height=670,
+            height=640,
         )
-        self.questions_container.place(x=30, y=120)
+        self.questions_container.place(x=40, y=170)
 
         Avatar(
             self.questions_container,
-            width=90,
-            height=90,
+            width=80,
+            height=80,
             image=self.question_icon,
             fg_color=PRIMARY,
         ).place(x=40, y=30)
@@ -105,8 +119,8 @@ class QuestionsPage(ctk.CTkFrame):
             text_color="#FFFFFF",
             dropdown_fg_color="#FFFFFF",
             dropdown_text_color="#0F172A",
-            dropdown_hover_color="#E2E8F0",
-            dropdown_font=("Inter", 19),
+            dropdown_hover_color="#ECF1F7",
+            dropdown_font=("Inter", 20.5),
             corner_radius=9,
             command=self.toggle_translate,
         )
@@ -115,47 +129,49 @@ class QuestionsPage(ctk.CTkFrame):
         self.question_label = ctk.CTkLabel(
             self.questions_container,
             text="",
-            font=("Inter", 28),
-            text_color=TEXT_PRIMARY,
+            font=("Inter", 25),
+            text_color="#1E293B",
             wraplength=1200,
             justify="left",
         )
-        self.question_label.place(x=90, y=145)
+        self.question_label.place(x=90, y=130)
 
         self.options_container = ctk.CTkFrame(
             self.questions_container, width=1050, height=400, fg_color="transparent"
         )
-        self.options_container.place(x=90, y=200)
+        self.options_container.place(x=90, y=180)
 
         self.prev_btn = ctk.CTkButton(
             self,
             text="Previous",
-            width=250,
+            width=210,
             state=ctk.DISABLED,
-            height=75,
+            height=70,
             text_color="#FFFFFF",
-            font=("Inter", 25, "bold"),
+            font=("Inter", 23, "bold"),
             image=self.prev_icon,
             compound="left",
             corner_radius=10,
             command=lambda: self.change_page("Prev"),
         )
-        self.prev_btn.place(x=60, y=815)
+        self.prev_btn.place(x=45, y=830)
 
         self.next_btn = ctk.CTkButton(
             self,
             text="Next",
-            width=250,
+            width=210,
             state=ctk.DISABLED,
-            height=75,
+            height=70,
             text_color="#FFFFFF",
-            font=("Inter", 25, "bold"),
+            font=("Inter", 23, "bold"),
             image=self.next_icon,
+            fg_color=PRIMARY,
+            hover_color=SECONDARY,
             compound="right",
             corner_radius=10,
             command=lambda: self.change_page("Next"),
         )
-        self.next_btn.place(x=1045, y=815)
+        self.next_btn.place(x=1125, y=830)
 
         self.question_builder()
 
@@ -172,7 +188,9 @@ class QuestionsPage(ctk.CTkFrame):
         )
 
         choices = seeds["choices_translate"] if self.is_translated else seeds["choices"]
-        self.question_label.configure(text=question, font=("Inter", 26))
+        self.question_label.configure(
+            text=question,
+        )
 
         self.pagination_label.configure(
             text=f"Questions {self.curr_page_index + 1} of {len(self.questions)}"
@@ -185,12 +203,12 @@ class QuestionsPage(ctk.CTkFrame):
         for idx, choice in enumerate(choices):
             card = ctk.CTkFrame(
                 self.options_container,
-                fg_color="#F8FAFC",
+                fg_color="#EEF2F7",
+                border_color="#CBD5E1",
                 corner_radius=12,
                 height=90,
                 border_width=2,
-                border_color="#E2E8F0",
-                width=1050,
+                width=1120,
             )
             card.pack(fill="x", pady=8)
             card.pack_propagate(False)
@@ -203,7 +221,7 @@ class QuestionsPage(ctk.CTkFrame):
                 value=str(idx),
                 fg_color=PRIMARY,
                 font=("Poppins", 22.5),
-                text_color="#1E293B",
+                text_color=TEXT_SECONDARY,
                 width=40,
                 command=lambda c=card: self.select_card(c),
             )
@@ -220,10 +238,13 @@ class QuestionsPage(ctk.CTkFrame):
 
     def select_card(self, selected_card):
         for card in self.options_container.winfo_children():
-            card.configure(fg_color="#F8FAFC", border_color="#E2E8F0")
+            card.configure(
+                fg_color="#EEF2F7",
+                border_color="#CBD5E1",
+            )
 
         selected_card.configure(
-            fg_color="#EFF6FF",
+            fg_color="#EEF2F7",
             border_color=PRIMARY,
             border_width=3,
         )
@@ -248,9 +269,9 @@ class QuestionsPage(ctk.CTkFrame):
         self.is_translated = choice == "Filipino"
 
         if self.is_translated:
-            self.question_label.configure(font=("Arial", 25, "italic"))
+            self.question_label.configure(font=("Poppins", 25, "italic"))
         else:
-            self.question_label.configure(font=("Arial", 25))
+            self.question_label.configure(font=("Poppins", 25))
 
         self.question_builder()
 
@@ -277,96 +298,177 @@ class QuestionsPage(ctk.CTkFrame):
 
         return [inputs]
 
+    def run_prediction(self, patient_inputs, answers, question_id):
+        try:
+            result = self.test_model.predict(patient_inputs)
+
+            # return to UI thread safely
+            self.after(
+                0, lambda: self.handle_prediction_result(result, answers, question_id)
+            )
+
+        except Exception as e:
+            self.after(0, lambda: self.show_error(e))
+
+    def handle_prediction_result(self, result, answers, question_id):
+        print("MODEL RESULT:", result)
+
+        test_confidence = result["confidence"]
+        test_classification = result["classification"]
+        top_patient_factors = result["top_patient_factors"]
+
+        success = self.db.save_question_responses(
+            question_id,
+            answers,
+            test_classification,
+            test_confidence,
+            top_patient_factors,
+        )
+
+        if success:
+            mb(
+                title="Saved Answers",
+                message="Responses saved successfully",
+                options=("Thanks",),
+                icon="check",
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
+            self.controller.change_window("EyeScanPage")
+        else:
+            self.show_error("Failed to save responses")
+        self.next_btn.configure(state=ctk.NORMAL)
+
+    def show_error(self, error):
+        mb(
+            title="Error",
+            message="Failed to save responses",
+            options=("Okay",),
+            icon="cancel",
+            fg_color="#FFFFFF",
+            border_width=1,
+            border_color="#E2E8F0",
+            text_color="#0F172A",
+            title_color="#0F172A",
+            font=("Inter", 16),
+            height=260,
+            button_color="#14B8A6",
+            button_hover_color="#0D9488",
+            button_text_color="#FFFFFF",
+            button_width=100,
+            button_height=55,
+        )
+
+    # NAVIGATION
+    # def change_page(self, button):
+    #     if button == "Next":
+    #         if self.curr_page_index == len(self.questions) - 1:
+    #             answers = self.normalize_answer()
+
+    #             patient_inputs = self.feed_inputs()
+    #             print("MODEL INPUT:", patient_inputs)
+
+    #             # MODEL
+    #             result = self.test_model.predict(patient_inputs)
+    #             print("MODEL RESULT:", result)
+
+    #             question_id = self.controller.current_question_id
+
+    #             test_confidence = result["confidence"]
+    #             test_classification = result["classification"]
+    #             top_patient_factors = result["top_patient_factors"]
+
+    #             success = self.db.save_question_responses(
+    #                 question_id,
+    #                 answers,
+    #                 test_classification,
+    #                 test_confidence,
+    #                 top_patient_factors,
+    #             )
+
+    #             if success:
+    #                 mb(
+    #                     title="Saved Answers",
+    #                     message="Responses saved successfully",
+    #                     options=("Thanks",),
+    #                     icon="check",
+    #                     fg_color="#FFFFFF",
+    #                     border_width=1,
+    #                     border_color="#E2E8F0",
+    #                     text_color="#0F172A",
+    #                     title_color="#0F172A",
+    #                     font=("Inter", 16),
+    #                     height=260,
+    #                     button_color="#14B8A6",
+    #                     button_hover_color="#0D9488",
+    #                     button_text_color="#FFFFFF",
+    #                     button_width=100,
+    #                     button_height=55,
+    #                 )
+
+    #                 self.controller.change_window("EyeScanPage")
+    #             else:
+    #                 mb(
+    #                     title="Error",
+    #                     message="Failed to save responses",
+    #                     options=("Okay",),
+    #                     icon="cancel",
+    #                     fg_color="#FFFFFF",
+    #                     border_width=1,
+    #                     border_color="#E2E8F0",
+    #                     text_color="#0F172A",
+    #                     title_color="#0F172A",
+    #                     font=("Inter", 16),
+    #                     height=260,
+    #                     button_color="#14B8A6",
+    #                     button_hover_color="#0D9488",
+    #                     button_text_color="#FFFFFF",
+    #                     button_width=100,
+    #                     button_height=55,
+    #                 )
+
+    #             return
+
+    #         else:
+    #             self.curr_page_index += 1
+
+    #     elif button == "Prev":
+    #         self.curr_page_index -= 1
+
+    #     self.question_builder()
+    #     self.update_buttons()
+    #     self.update_progressbar()
+    #     self.update_percentage()
+
     # NAVIGATION
     def change_page(self, button):
+
         if button == "Next":
-            # if self.curr_page_index == len(self.questions) - 1:
-            #     answers = self.normalize_answer()
-            #     # print(answers)
-            #     patient_inputs = self.feed_inputs(temperature=38.5)
-            #     print("MODEL INPUT:", patient_inputs)
-
-            #     # MODEL PREDICTION
-            #     result = self.test_model.predict(patient_inputs)
-            #     print("MODEL RESULT:", result)
-
-            #     patient_id = self.controller.current_user[0]
-            #     temp = 38.5
-
-            #     test_confidence = result["confidence"]
-            #     test_classification = result["classification"]
-            #     top_patient_factors = result["top_patient_factors"]
-
-            #     question_id = self.db.save_question_responses(
-            #         patient_id,
-            #         temp,
-            #         answers,
-            #         test_classification,
-            #         test_confidence,
-            #         top_patient_factors,
-            #     )
-
-            #     if question_id:
-            #         self.controller.current_question_id = question_id
-            #         # mb.showinfo("Saved", "Responses saved successfully")
-            #         mb(
-            #             title="Saved Answers",
-            #             message="Responses saved successfully",
-            #             options=("Thanks",),
-            #             icon="check",
-            #         ).show()
-            #         self.controller.change_window("EyeScanPage")
-            #     else:
-
-            #         # mb.showerror("Error", "Failed to save responses")
-            #         mb(
-            #             title="Error",
-            #             message="Failed to save responses",
-            #             options=("Okay",),
-            #             icon="cancel",
-            #         ).show()
-
-            #     return
             if self.curr_page_index == len(self.questions) - 1:
+
                 answers = self.normalize_answer()
-
                 patient_inputs = self.feed_inputs()
-                print("MODEL INPUT:", patient_inputs)
-
-                # MODEL
-                result = self.test_model.predict(patient_inputs)
-                print("MODEL RESULT:", result)
-
                 question_id = self.controller.current_question_id
 
-                test_confidence = result["confidence"]
-                test_classification = result["classification"]
-                top_patient_factors = result["top_patient_factors"]
+                print("MODEL INPUT:", patient_inputs)
 
-                success = self.db.save_question_responses(
-                    question_id,
-                    answers,
-                    test_classification,
-                    test_confidence,
-                    top_patient_factors,
-                )
+                self.next_btn.configure(state=ctk.DISABLED, text="Processing...")
 
-                if success:
-                    mb(
-                        title="Saved Answers",
-                        message="Responses saved successfully",
-                        options=("Thanks",),
-                        icon="check",
-                    ).show()
-
-                    self.controller.change_window("EyeScanPage")
-                else:
-                    mb(
-                        title="Error",
-                        message="Failed to save responses",
-                        options=("Okay",),
-                        icon="cancel",
-                    ).show()
+                threading.Thread(
+                    target=self.run_prediction,
+                    args=(patient_inputs, answers, question_id),
+                    daemon=True,
+                ).start()
 
                 return
 
@@ -409,6 +511,32 @@ class QuestionsPage(ctk.CTkFrame):
         percentage = int((answered / total) * 100)
 
         self.percent_label.configure(text=f"{percentage}% Complete")
+
+    def clear_fields(self):
+        # 🔥 RESET LOGIC STATE
+        self.curr_page_index = 0
+        self.answers.clear()
+        self.is_translated = False
+
+        # 🔥 RESET VARIABLE (VERY IMPORTANT)
+        self.answer_var = ctk.StringVar()
+
+        # 🔥 RESET UI
+        self.progress_bar.set(0)
+        self.percent_label.configure(text="0% Complete")
+
+        self.prev_btn.configure(state=ctk.DISABLED)
+        self.next_btn.configure(state=ctk.DISABLED, text="Next")
+
+        # reset language dropdown
+        self.translate_var.set("English")
+
+        # 🔥 CLEAR OPTIONS UI
+        for widget in self.options_container.winfo_children():
+            widget.destroy()
+
+        # 🔥 LOAD FIRST QUESTION AGAIN
+        self.question_builder()
 
     def on_show(self):
         question_id = self.controller.current_question_id

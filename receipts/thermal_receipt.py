@@ -3,10 +3,15 @@ from datetime import datetime
 
 
 class ThermalPrinter:
-    def __init__(self, device="/dev/usb/lp0", max_chars=32):
-        # Open printer as file instead of serial
+    # def __init__(self, device="/dev/usb/lp0", max_chars=32):
+    #     # Open printer as file instead of serial
+    #     self.printer = open(device, "wb")
+    #     self.max_chars = max_chars
+
+    def __init__(self, device="/dev/usb/lp0", max_chars=32, created_at=None):
         self.printer = open(device, "wb")
         self.max_chars = max_chars
+        self.created_at = created_at
 
         # ESC/POS Commands
         self.CENTER = b"\x1b\x61\x01"
@@ -56,12 +61,34 @@ class ThermalPrinter:
         line = key + (" " * spacing) + str(value)
         self.write(line + "\n")
 
-    #  DATE TIME
-    def print_datetime_line(self):
-        now = datetime.now()
+    # #  DATE TIME
+    # def print_datetime_line(self):
+    #     now = datetime.now()
 
-        date_str = now.strftime("%Y-%m-%d")
-        time_str = now.strftime("%I:%M %p")
+    #     date_str = now.strftime("%Y-%m-%d")
+    #     time_str = now.strftime("%I:%M %p")
+
+    #     left = f"Date: {date_str}"
+    #     right = f"Time: {time_str}"
+
+    #     spaces = self.max_chars - len(left) - len(right)
+    #     if spaces < 2:
+    #         spaces = 2
+
+    #     line = left + (" " * spaces) + right
+    #     self.write(line + "\n")
+
+    def print_datetime_line(self):
+        if self.created_at:
+            dt = self.created_at
+
+            if isinstance(dt, str):
+                dt = datetime.fromisoformat(dt)
+        else:
+            dt = datetime.now()
+
+        date_str = dt.strftime("%Y-%m-%d")
+        time_str = dt.strftime("%I:%M %p")
 
         left = f"Date: {date_str}"
         right = f"Time: {time_str}"
@@ -138,7 +165,7 @@ class ThermalPrinter:
         # TEST RESULTS
         self.section("Test Results")
         self.kv("Temperature", f"{temperature:.1f} C")
-        self.kv("Test Result", test_result)
+        self.kv("Test Classification", test_result)
         self.kv("Test Confidence", f"{test_conf}%")
         self.kv("Eye Classification", eye_classification)
         self.kv("Eye Confidence", f"{eye_conf}%")

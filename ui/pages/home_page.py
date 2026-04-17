@@ -156,7 +156,7 @@ class HomePage(ctk.CTkFrame):
             self.line_inner,
             title="Historic Progress",
             lines_config=[
-                {"key": "test", "label": "Test Confidence", "color": BLUE},
+                {"key": "test", "label": "Test Confidence", "color": PINK},
                 {"key": "eye", "label": "Eye Scan Confidence", "color": VIOLET},
                 {"key": "temp", "label": "Body Temp", "color": YELLOW},
             ],
@@ -181,7 +181,7 @@ class HomePage(ctk.CTkFrame):
             self.bar_graph_frame,
             title="Risk History",
             lines_config=[
-                {"key": "safe", "label": "Safe", "color": GREEN},
+                {"key": "safe", "label": "Safe", "color": BLUE},
                 {"key": "mild", "label": "Mild", "color": VIOLET},
                 {"key": "moderate", "label": "Moderate", "color": YELLOW},
                 {"key": "severe", "label": "Severe", "color": RED},

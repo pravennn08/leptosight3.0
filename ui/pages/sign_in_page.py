@@ -9,7 +9,7 @@ from constants.seeds import (
     SECONDARY,
     LOGO,
 )
-from ..components.messagebox import MessageBox as mb
+from CTkMessagebox import CTkMessagebox as mb
 from ..components.square import Square
 
 
@@ -26,7 +26,7 @@ class SignInPage(ctk.CTkFrame):
         # SYSTEM LOGO
         self.logo_img = ctk.CTkImage(
             Image.open(LOGO),
-            size=(81, 81),
+            size=(82, 82),
         )
 
         # CARD CONTAINER
@@ -209,11 +209,24 @@ class SignInPage(ctk.CTkFrame):
         if error:
             # mb.showerror("Login", error)
             mb(
+                self,
                 title="Error",
                 message=error,
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
             return
 
@@ -230,11 +243,24 @@ class SignInPage(ctk.CTkFrame):
             #     f"Login temporarily locked.\nTry again in {minutes} minute(s).",
             # )
             mb(
+                self,
                 title="Too Many Attempts",
                 message=f"Login temporarily locked.\nTry again in {minutes} minute(s).",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             return
 
         # LOGIN SUCCESS
@@ -249,11 +275,24 @@ class SignInPage(ctk.CTkFrame):
 
             # mb.showinfo("Success", "Login successful")
             mb(
+                self,
                 title="Success",
                 message="Login successful.",
                 options=("Thanks",),
                 icon="check",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
             # ROLE BASED NAVIGATION
             if role in ("admin", "personnel"):
@@ -266,11 +305,24 @@ class SignInPage(ctk.CTkFrame):
             self.controller.current_user = self.db.current_user
             # mb.showwarning("Verify", "Please verify your OTP first.")
             mb(
+                self,
                 title="Verify",
                 message="Please verify your OTP first.",
                 options=("Okay",),
                 icon="warning",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
             self.controller.change_window("VerifyOTPPage")
 
@@ -279,39 +331,91 @@ class SignInPage(ctk.CTkFrame):
             self.controller.current_user = self.db.current_user
             # mb.showinfo("Setup Required", "Please complete account verification.")
             mb(
+                self,
                 title="Setup Required",
                 message="Please complete account verification.",
                 options=("Okay",),
                 icon="info",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             self.controller.change_window("AccountVerificationPage")
 
         elif result == "INVALID_PASSWORD":
             # mb.showerror("Login", "Incorrect password")
             mb(
+                self,
                 title="Error",
                 message="Incorrect password",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
         elif result == "USER_NOT_FOUND":
             # mb.showerror("Login", "User not found")
             mb(
+                self,
                 title="Error",
                 message="User not found",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
         else:
             # mb.showerror("Error", "Login failed")
             mb(
+                self,
                 title="Error",
                 message="Login failed",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
     def toggle_password(self):
         if self.password_visible:

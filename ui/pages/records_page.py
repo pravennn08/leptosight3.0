@@ -27,6 +27,7 @@ from ..components.avatar import Avatar
 from ..components.messagebox import MessageBox as mb
 from ..components.data_table import DataTable
 from ..components.rectangle import Rectangle
+from receipts.thermal_receipt import ThermalPrinter
 from CTkTable import *
 
 
@@ -161,16 +162,19 @@ class RecordsPage(ctk.CTkFrame):
         user_id = user[0]
         keyword = self.search_entry.get().strip()
 
-        # If empty → show all records again
         if not keyword:
-            data = self.controller.db.fetch_patient_records(user_id)
+            records = self.controller.db.fetch_patient_records(user_id)
         else:
-            data = self.controller.db.search_patient_records(user_id, keyword)
+            records = self.controller.db.search_patient_records(user_id, keyword)
 
-        if not data:
-            data = [("No Results", "-", "-", "-", "-")]
+        records = records or []
+        self.full_records = records
+        if records:
+            table_data = [r.get("display", ("-", "-", "-", "-", "-")) for r in records]
+        else:
+            table_data = [("No Results", "-", "-", "-", "-")]
 
-        self.table.update_data(data)
+        self.table.update_data(table_data)
 
     def on_show(self):
         user = self.controller.current_user
@@ -179,15 +183,20 @@ class RecordsPage(ctk.CTkFrame):
             return
 
         user_id = user[0]
-        records = self.controller.db.fetch_patient_records(user_id)
+        records = self.controller.db.fetch_patient_records(user_id) or []
 
+        # ✅ store full records
         self.full_records = records
-        self.table_data = [r["display"] for r in records]
 
-        if not self.table_data:
+        if records:
+            self.table_data = [
+                r.get("display", ("-", "-", "-", "-", "-")) for r in records
+            ]
+        else:
             self.table_data = [("No Data", "-", "-", "-", "-")]
 
         self.table.update_data(self.table_data)
+
         self.search_entry.configure(placeholder_text="Search records...")
 
     def view_record(self, index):
@@ -203,8 +212,35 @@ class RecordsPage(ctk.CTkFrame):
 
         self.top.geometry(f"1400x700+{x}+{y}")
 
-    def print_record(self, row):
-        print("Print clicked on row:", row)
+    def print_record(self, index):
+        record = self.full_records[index]["full"]
+
+        diagnostic_id = record["id"]
+
+        data = self.controller.db.print_patient_results_table(diagnostic_id)
+
+        if not data:
+            print("No data to print")
+            return
+
+        printer = ThermalPrinter(
+            device="/dev/usb/lp0", created_at=data.get("created_at")
+        )
+
+        printer.print_report(
+            patient_id=data.get("patient_id", "N/A"),
+            patient_name=data.get("patient_name", "N/A"),
+            temperature=data.get("temperature", 0),
+            contact_number=data.get("contact_number", "N/A"),
+            test_result=data.get("test_result", "N/A"),
+            test_conf=data.get("test_conf", 0),
+            eye_classification=data.get("eye_classification", "N/A"),
+            eye_conf=data.get("eye_conf", 0),
+            risk_level=data.get("risk_level", "N/A"),
+            recommendation=data.get("recommendation") or "No recommendation available",
+        )
+
+        printer.close()
 
 
 class RecordModal(ctk.CTkToplevel):
@@ -503,7 +539,7 @@ class RecordModal(ctk.CTkToplevel):
         data = self.row
 
         diag_id = data.get("id")
-        formatted_id = f"D{int(diag_id):03d}" if diag_id else "N/A"
+        formatted_id = f"D{int(diag_id)}" if diag_id else "N/A"
         self.id_badge.set_text(f"Diagnostic ID: {formatted_id}")
 
         # ✅ FORMAT DATE

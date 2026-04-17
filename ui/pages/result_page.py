@@ -14,12 +14,18 @@ from constants.seeds import (
     RED,
     BLUE,
     RECEIPT,
+    LOGO,
     PINK,
     PLUS,
     PRINTER,
+    SECONDARY,
+    EYE,
+    PERCENT,
 )
 from datetime import datetime
 from ..components.avatar import Avatar
+from CTkMessagebox import CTkMessagebox as mb
+from ..components.square import Square
 from ..components.animated_horizontal_bar_chart import AnimatedHorizontalBarChart
 from receipts.automate_receipt import AutomateReceipt
 from receipts.thermal_receipt import ThermalPrinter
@@ -67,31 +73,17 @@ class ResultsPage(ctk.CTkFrame):
             font=("Poppins", 20),
             text_color=TEXT_SECONDARY,
         ).place(x=40, y=90)
+        self.value_labels = []
+        self.status_labels = []
+        self.card_positions = [40, 290, 540, 790]
 
         self.results_data = [
-            {
-                "title": "Temperature",
-                "value": "36.2 °C",
-                "status": "NORMAL",
-            },
-            {
-                "title": "Test Result",
-                "value": "99%",
-                "status": "SAFE",
-            },
-            {
-                "title": "Eye Scan",
-                "value": "80%",
-                "status": "MILD",
-            },
-            {
-                "title": "Risk Level",
-                "value": "MILD",
-                "status": None,
-            },
+            {"title": "Temperature", "value": "--", "status": "--"},
+            {"title": "Test Result", "value": "--", "status": "--"},
+            {"title": "Eye Scan", "value": "--", "status": "--"},
+            {"title": "Risk Level", "value": "", "status": ""},
         ]
 
-        self.card_positions = [40, 290, 540, 790]
         self.build_result_cards()
 
         self.graphs_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -114,29 +106,6 @@ class ResultsPage(ctk.CTkFrame):
             padx=(0, 10),
         )
         self.bar_container.pack_propagate(False)
-
-        # self.patient_chart = AnimatedHorizontalBarChart(
-        #     self.bar_container,
-        #     title="Top Contributing Factors",
-        #     lines_config=[
-        #         {"label": "temperature", "color": RED},
-        #         {"label": "calf_pain", "color": VIOLET},
-        #         {"label": "wounds", "color": YELLOW},
-        #         {"label": "environment", "color": PINK},
-        #         {"label": "headache_freq", "color": BLUE},
-        #     ],
-        # )
-
-        # self.patient_chart.pack(fill="both", expand=True, padx=10, pady=10)
-        # data = [
-        #     {"score": 13.27, "feature": "temperature"},
-        #     {"score": 2, "feature": "calf_pain"},
-        #     {"score": 0.09, "feature": "wounds"},
-        #     {"score": 0.4, "feature": "environment"},
-        #     {"score": 50, "feature": "headache_freq"},
-        # ]
-
-        # self.patient_chart.update_chart(data)
 
         self.recommendation_container = ctk.CTkFrame(
             self,
@@ -164,14 +133,14 @@ class ResultsPage(ctk.CTkFrame):
             font=("Inter", 20),
         ).place(x=80, y=30)
 
-        Avatar(
-            self.recommendation_container,
-            # image=self.check_icon,
-            image="",
-            width=15,
-            height=15,
-            fg_color=GREEN,
-        ).place(x=55, y=90)
+        # Avatar(
+        #     self.recommendation_container,
+        #     # image=self.check_icon,
+        #     image="",
+        #     width=15,
+        #     height=15,
+        #     fg_color=GREEN,
+        # ).place(x=55, y=90)
 
         self.recommendation_label = ctk.CTkLabel(
             self.recommendation_container,
@@ -183,7 +152,7 @@ class ResultsPage(ctk.CTkFrame):
             justify="left",
         )
 
-        self.recommendation_label.place(x=80, y=85)
+        self.recommendation_label.place(x=55, y=85)
 
         self.receipt_container = ctk.CTkFrame(
             self,
@@ -219,7 +188,6 @@ class ResultsPage(ctk.CTkFrame):
             fg_color="transparent",
         )
         self.pdf_preview.place(x=10, y=85)
-        self.reciept_preview()
 
         self.actions_container = ctk.CTkFrame(
             self,
@@ -232,7 +200,7 @@ class ResultsPage(ctk.CTkFrame):
         )
 
         self.actions_container.place(x=1045, y=710)
-        ctk.CTkButton(
+        self.print_btn = ctk.CTkButton(
             self.actions_container,
             text="Print",
             fg_color=VIOLET,
@@ -242,7 +210,9 @@ class ResultsPage(ctk.CTkFrame):
             font=("Inter", 20, "bold"),
             image=self.printer_icon,
             compound="left",
-        ).place(x=23, y=25)
+            command=self.print_receipt,
+        )
+        self.print_btn.place(x=23, y=25)
 
         ctk.CTkButton(
             self.actions_container,
@@ -254,6 +224,7 @@ class ResultsPage(ctk.CTkFrame):
             font=("Inter", 20, "bold"),
             image=self.plus_icon,
             compound="left",
+            command=lambda: self.controller.change_window("StartTestPage"),
         ).place(x=23, y=100)
 
     def build_receipt_filename(self, patient_id, question_id):
@@ -327,69 +298,102 @@ class ResultsPage(ctk.CTkFrame):
             print("PDF Preview Error:", e)  # 🔥 DON'T USE PASS
 
     def generate_receipt(self):
+        import os
+
         qid = self.controller.current_question_id
         data = self.controller.db.get_receipt_data(qid)
 
         if not data:
+            print("No receipt data found")
             return
 
         self.current_patient_id = data["patient_id"]
-        # CHECK IF PDF ALREADY EXISTS
+
+        # ✅ Reuse existing PDF
         if data.get("pdf_path") and os.path.exists(data["pdf_path"]):
             self.latest_receipt_path = data["pdf_path"]
+            print("Using existing PDF")
             return
 
         filename = self.build_receipt_filename(data["patient_id"], data["result_id"])
 
         receipt = AutomateReceipt(
             filename=filename,
+            date=data["date"],
+            time=data["time"],
             patient_id=data["patient_id"],
             patient_name=data["patient_name"],
             contact_number=data["contact_number"],
-            temperature=data["temperature"],
-            test_risk_level=data["test_risk_level"],
+            temperature=data["temp"],
+            test_classification=data["test_classification"],
             test_confidence=data["test_confidence"],
             eye_classification=data["eye_classification"],
+            eye_confidence=data["eye_confidence"],
             risk_level=data["risk_level"],
             recommendation=data["recommendation"],
-            result_id=str(data["patient_id"]),
         )
 
         receipt.build()
 
-        self.controller.db.save_pdf_path(
-            self.controller.current_question_id,
-            filename,
-        )
+        self.controller.db.save_pdf_path(qid, filename)
 
         self.latest_receipt_path = filename
 
-        #  PREPARE DATA FOR THERMAL PRINT
-        thermal_data = {
-            "patient_id": data.get("patient_id", "UNKNOWN"),
-            "patient_name": data.get("patient_name", "UNKNOWN"),
-            "temperature": data.get("temperature", 0),
-            "contact_number": data.get("contact_number", "N/A"),
-            "test_risk_level": data.get("test_risk_level") or "Pending",
-            "test_conf": data.get("test_confidence") or 0,
-            "eye_classification": data.get("eye_classification") or "Unknown",
-            "eye_conf": data.get("eye_confidence") or 0,
-            "risk_level": data.get("risk_level") or "UNDETERMINED",
-            "recommendation": data.get("recommendation")
-            or "No recommendation available. Please consult a medical professional for further evaluation.",
-        }
+        print("Generated new PDF:", filename)
 
-        try:
-            thermal_printer = ThermalPrinter(port="COM3", baudrate=115200)
-            thermal_printer.print_report(**thermal_data)
-            thermal_printer.close()
-        except Exception as e:
-            print("Thermal print error:", e)
+    def print_receipt(self):
+        qid = self.controller.current_question_id
+
+        if not qid:
+            print("No question ID found")
+            return
+
+        # ✅ Always fetch fresh data
+        data = self.controller.db.print_patient_results_table(qid)
+
+        if not data:
+            print("No data found, abort print")
+            return
+
+        printer = ThermalPrinter(
+            device="/dev/usb/lp0",
+            created_at=data.get("created_at"),
+        )
+
+        printer.print_report(
+            patient_id=data.get("patient_id", "N/A"),
+            patient_name=data.get("patient_name", "N/A"),
+            temperature=data.get("temperature", 0),
+            contact_number=data.get("contact_number", "N/A"),
+            test_result=data.get("test_result", "N/A"),
+            test_conf=data.get("test_conf", 0),
+            eye_classification=data.get("eye_classification", "N/A"),
+            eye_conf=data.get("eye_conf", 0),
+            risk_level=data.get("risk_level", "N/A"),
+            recommendation=data.get("recommendation") or "No recommendation available",
+        )
+        printer.close()
+
+    def update_result_cards(self):
+        for i, item in enumerate(self.results_data):
+
+            # update value
+            if i < len(self.value_labels):
+                self.value_labels[i].configure(text=item["value"])
+
+            # update status
+            if i < len(self.status_labels):
+                status = item["status"] if item["status"] else ""
+                self.status_labels[i].configure(text=status)
 
     def build_result_cards(self):
+
         START_Y = 140
         WIDTH = 235
         HEIGHT = 150
+
+        self.value_labels = []  # reset
+        self.status_labels = []
 
         for i, item in enumerate(self.results_data):
             x_position = self.card_positions[i]
@@ -405,7 +409,6 @@ class ResultsPage(ctk.CTkFrame):
             )
             card.place(x=x_position, y=START_Y)
 
-            # ICON + COLOR FROM ARRAYS
             icon = self.icons[i] if i < len(self.icons) else self.temp_icon
             color = self.avatar_colors[i] if i < len(self.avatar_colors) else PRIMARY
 
@@ -417,7 +420,7 @@ class ResultsPage(ctk.CTkFrame):
                 fg_color=color,
             ).place(x=20, y=20)
 
-            # TITLE
+            # TITLE (no need to store)
             ctk.CTkLabel(
                 card,
                 text=item["title"],
@@ -425,76 +428,45 @@ class ResultsPage(ctk.CTkFrame):
                 text_color=TEXT_SECONDARY,
             ).place(x=90, y=25)
 
-            # VALUE
-            ctk.CTkLabel(
+            # ✅ VALUE
+            value_label = ctk.CTkLabel(
                 card,
                 text=item["value"],
-                font=("Poppins", 35),
+                font=("Poppins", 30),
                 text_color=TEXT_PRIMARY,
-            ).place(x=90, y=55)
+            )
+            value_label.place(x=90, y=55)
 
-            # STATUS
-            ctk.CTkLabel(
+            # ✅ STATUS
+            status = item["status"]
+
+            # ✅ Adjust font size based on value
+            if status and status.upper() == "MODERATE":
+                font_size = 12
+            else:
+                font_size = 15
+
+            status_label = ctk.CTkLabel(
                 card,
-                text=item["status"],
-                font=("Inter", 15, "bold"),
-                text_color=color,  # 🔥 matches icon color
-            ).place(x=90, y=100)
+                text=status,
+                font=("Inter", font_size, "bold"),
+                text_color=color,
+            )
+            status_label.place(x=90, y=100)
 
-    # def load_results(self):
-    # # Populate this
-    # self.results_data = [
-    #     {
-    #         "title": "Temperature",
-    #         "value": "36.2 °C",
-    #         "status": "NORMAL",
-    #     },
-    #     {
-    #         "title": "Test Result",
-    #         "value": "99%",
-    #         "status": "SAFE",
-    #     },
-    #     {
-    #         "title": "Eye Scan",
-    #         "value": "80%",
-    #         "status": "MILD",
-    #     },
-    #     {
-    #         "title": "Risk Level",
-    #         "value": "MILD",  # value to uppercase this
-    #         "status": None,
-    #     },
-    # ]
+            # ✅ STORE THEM
+            self.value_labels.append(value_label)
+            self.status_labels.append(status_label)
 
-    # qid = self.controller.current_question_id
-
-    # if not qid:
-    #     return
-
-    # result = self.controller.db.get_diagnosis_results(qid)
-
-    #         self.patient_chart = AnimatedHorizontalBarChart(
-    #     self.bar_container,
-    #     title="Top Contributing Factors",
-    #     lines_config=[
-    #         {"label": "temperature", "color": RED},
-    #         {"label": "calf_pain", "color": VIOLET},
-    #         {"label": "wounds", "color": YELLOW},
-    #         {"label": "environment", "color": PINK},
-    #         {"label": "headache_freq", "color": BLUE},
-    #     ],
-    # )
-
-    # self.patient_chart.pack(fill="both", expand=True, padx=10, pady=10)
-    # data = [
-    #     {"score": 13.27, "feature": "temperature"},
-    #     {"score": 2, "feature": "calf_pain"},
-    #     {"score": 0.09, "feature": "wounds"},
-    #     {"score": 0.4, "feature": "environment"},
-    #     {"score": 50, "feature": "headache_freq"},
-    # ]
-
-    # self.patient_chart.update_chart(data)
+    def get_temp_status(self, temp):
+        if temp is None:
+            return "UNKNOWN"
+        elif temp < 36:
+            return "LOW"
+        elif 36 <= temp <= 37.5:
+            return "NORMAL"
+        else:
+            return "HIGH"
 
     def load_results(self):
         qid = self.controller.current_question_id
@@ -508,7 +480,7 @@ class ResultsPage(ctk.CTkFrame):
             return
 
         # ✅ Extract values safely
-        temperature = result["temperature"]
+        temperature = result["temp"]
         test_class = result["test_classification"]
         test_conf = result["test_confidence"]
         eye_class = result["eye_classification"]
@@ -550,35 +522,57 @@ class ResultsPage(ctk.CTkFrame):
                 "status": None,
             },
         ]
+        self.update_result_cards()
 
-        #     self.patient_chart = AnimatedHorizontalBarChart(
-        #     self.bar_container,
-        #     title="Top Contributing Factors",
-        #     lines_config=[
-        #         {"label": "temperature", "color": RED},
-        #         {"label": "calf_pain", "color": VIOLET},
-        #         {"label": "wounds", "color": YELLOW},
-        #         {"label": "environment", "color": PINK},
-        #         {"label": "headache_freq", "color": BLUE},
-        #     ],
-        # )
+        import random
 
-        # self.patient_chart.pack(fill="both", expand=True, padx=10, pady=10)
-        # data = [
-        #     {"score": 13.27, "feature": "temperature"},
-        #     {"score": 2, "feature": "calf_pain"},
-        #     {"score": 0.09, "feature": "wounds"},
-        #     {"score": 0.4, "feature": "environment"},
-        #     {"score": 50, "feature": "headache_freq"},
-        # ]
+        top_factors = result.get("top_factors")
 
-        # self.patient_chart.update_chart(data)
-        # ✅ Recommendation (safe)
+        if top_factors:
+
+            # ✅ Sort highest score first
+            top_factors = sorted(top_factors, key=lambda x: x["score"], reverse=True)
+
+            # ✅ Your available colors ONLY
+            COLOR_POOL = [RED, VIOLET, YELLOW, PINK, BLUE, GREEN]
+
+            # ✅ Shuffle for randomness
+            colors = COLOR_POOL.copy()
+            random.shuffle(colors)
+
+            # ✅ Build lines_config dynamically
+            lines_config = [
+                {
+                    "label": item["feature"],
+                    "color": colors[i % len(colors)],  # loop if more features
+                }
+                for i, item in enumerate(top_factors)
+            ]
+
+            # ✅ Create chart only once
+            if not hasattr(self, "patient_chart"):
+                self.patient_chart = AnimatedHorizontalBarChart(
+                    self.bar_container,
+                    title="Top Contributing Factors",
+                    lines_config=lines_config,
+                )
+                self.patient_chart.pack(fill="both", expand=True, padx=10, pady=10)
+
+            else:
+                self.patient_chart.lines_config = lines_config
+
+            # ✅ Update chart data
+            self.patient_chart.update_chart(top_factors)
+
+        else:
+            print("No top factors available")
+            # ✅ Recommendation (safe)
         self.recommendation_label.configure(
             text=recommendation if recommendation else "No recommendation available."
         )
 
     def on_show(self):
+
         self.load_results()
         self.generate_receipt()
-        self.controller.current_question_id = None
+        self.reciept_preview()

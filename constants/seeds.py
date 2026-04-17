@@ -40,6 +40,16 @@ RISK = os.path.join(BASE_DIR, "assets", "icons", "risk.png")
 CHECK_TEST = os.path.join(BASE_DIR, "assets", "icons", "check-test.png")
 RECEIPT = os.path.join(BASE_DIR, "assets", "icons", "receipt.png")
 PRINTER = os.path.join(BASE_DIR, "assets", "icons", "printer.png")
+VERIFIED = os.path.join(BASE_DIR, "assets", "icons", "verified.png")
+FILTER = os.path.join(BASE_DIR, "assets", "icons", "filter.png")
+HEART = os.path.join(BASE_DIR, "assets", "icons", "heart.png")
+READ = os.path.join(BASE_DIR, "assets", "icons", "read.png")
+RECALL = os.path.join(BASE_DIR, "assets", "icons", "recall.png")
+SKIP = os.path.join(BASE_DIR, "assets", "icons", "skip.png")
+EVAL = os.path.join(BASE_DIR, "assets", "icons", "eval.png")
+SELECT = os.path.join(BASE_DIR, "assets", "icons", "select.png")
+SHIELD = os.path.join(BASE_DIR, "assets", "icons", "warning.png")
+PERCENT = os.path.join(BASE_DIR, "assets", "icons", "percent.png")
 
 
 # COLOR PALETTE
@@ -87,6 +97,34 @@ INSTRUCTIONS = [
         "sub_title": "Complete the short questionnaire after scanning",
     },
 ]
+# GENERAL INSTRUCTIONS
+TEST_INSTRUCTION = [
+    {
+        "title": "Read Carefully",
+        "sub_title": "Understand each question before selecting the most appropriate response",
+    },
+    {
+        "title": "Recall Experiences",
+        "sub_title": "Base your answers on recent exposure, symptoms, and physical condition",
+    },
+    {
+        "title": "Select One Answer",
+        "sub_title": "Choose the option that best reflects your current or recent condition",
+    },
+    {
+        "title": "Consider Severity",
+        "sub_title": "Evaluate the intensity and frequency of each symptom or experience",
+    },
+    {
+        "title": "Avoid Skipping",
+        "sub_title": "Complete all questions for a comprehensive evaluation",
+    },
+    {
+        "title": "Answer Honestly",
+        "sub_title": "Provide truthful responses to ensure accurate assessment",
+    },
+]
+
 
 # CAMERA TIPS
 CAMERA_TIPS = [

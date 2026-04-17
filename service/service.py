@@ -245,7 +245,7 @@ class DatabaseService:
         try:
             query = f"""
             SELECT id, name, email, phone_number, password, role, created_at,
-                is_verified, recovery_setup
+                is_verified, last_login_at
             FROM {self.user_table}
             WHERE email = %s
             """
@@ -717,49 +717,6 @@ class DatabaseService:
             print("BAR CHART ERROR:", error)
             return []
 
-    # # FETCH PATIENT RECORDS BASED ON LOGIN PATIENT
-    # def fetch_patient_records(self, patient_id):
-    #     try:
-    #         query = f"""
-    #         SELECT
-    #             id,
-    #             temp,
-    #             test_classification,
-    #             eye_classification,
-    #             risk_level
-    #         FROM {self.diagnostic_table}
-    #         WHERE patient_id = %s
-    #         ORDER BY created_at ASC;
-    #         """
-
-    #         with self.conn.cursor() as cur:
-    #             cur.execute(query, (patient_id,))
-    #             rows = cur.fetchall()
-
-    #         if not rows:
-    #             return []
-
-    #         table_data = []
-
-    #         for row in rows:
-    #             diag_id, temp, test_class, eye_class, risk = row
-
-    #             table_data.append(
-    #                 (
-    #                     f"D{diag_id}",
-    #                     f"{float(temp):.1f}°C" if temp else "N/A",
-    #                     test_class or "N/A",
-    #                     eye_class or "N/A",
-    #                     f"{float(risk):.2f}" if risk else "N/A",
-    #                 )
-    #             )
-
-    #         return table_data
-
-    #     except Exception as error:
-    #         print("FETCH RECORDS ERROR:", error)
-    #         return []
-
     def fetch_patient_records(self, patient_id):
         try:
             query = f"""
@@ -805,15 +762,19 @@ class DatabaseService:
                     eye_scan,
                 ) = row
 
+                # ✅ safe conversions
+                temp_display = f"{float(temp):.1f}°C" if temp is not None else "N/A"
+                risk_display = str(risk) if risk else "N/A"
+
                 results.append(
                     {
                         "id": diag_id,
                         "display": (
                             f"D{diag_id}",
-                            f"{float(temp):.1f}°C" if temp else "N/A",
+                            temp_display,
                             test_class or "N/A",
                             eye_class or "N/A",
-                            f"{float(risk):.2f}" if risk else "N/A",
+                            risk_display,
                         ),
                         "full": {
                             "id": diag_id,
@@ -825,21 +786,20 @@ class DatabaseService:
                             "risk": risk,
                             "recommendation": recommendation,
                             "created_at": created_at,
-                            "answers": answers,
-                            "factors": factors,
+                            "answers": answers or [],
+                            "factors": factors or [],
                             "eye_image": eye_img,
                             "eye_scan": eye_scan,
                         },
                     }
                 )
 
-            return results
+            return results or []  # ✅ never return None
 
         except Exception as error:
             print("FETCH RECORDS ERROR:", error)
             return []
 
-    # SEARCH PATIENT RECORD BASED ON LOGIN PATIENT
     def search_patient_records(self, patient_id, keyword):
         try:
             query = f"""
@@ -847,8 +807,16 @@ class DatabaseService:
                 id,
                 temp,
                 test_classification,
+                test_confidence,
                 eye_classification,
-                risk_level
+                eye_confidence,
+                risk_level,
+                recommendation,
+                created_at,
+                answers,
+                top_patient_factors,
+                eye_image_path,
+                eye_scan_path
             FROM {self.diagnostic_table}
             WHERE patient_id = %s
             AND (
@@ -867,26 +835,123 @@ class DatabaseService:
                 cur.execute(query, (patient_id, search, search, search, search, search))
                 rows = cur.fetchall()
 
-            table_data = []
+            results = []
 
             for row in rows:
-                diag_id, temp, test_class, eye_class, risk = row
+                (
+                    diag_id,
+                    temp,
+                    test_class,
+                    test_conf,
+                    eye_class,
+                    eye_conf,
+                    risk,
+                    recommendation,
+                    created_at,
+                    answers,
+                    factors,
+                    eye_img,
+                    eye_scan,
+                ) = row
 
-                table_data.append(
-                    (
-                        f"D{diag_id}",
-                        f"{float(temp):.1f}°C" if temp else "N/A",
-                        test_class or "N/A",
-                        eye_class or "N/A",
-                        f"{float(risk):.2f}" if risk else "N/A",
-                    )
+                temp_display = f"{float(temp):.1f}°C" if temp is not None else "N/A"
+                risk_display = str(risk) if risk else "N/A"
+
+                results.append(
+                    {
+                        "id": diag_id,
+                        "display": (
+                            f"D{diag_id}",
+                            temp_display,
+                            test_class or "N/A",
+                            eye_class or "N/A",
+                            risk_display,
+                        ),
+                        "full": {
+                            "id": diag_id,
+                            "temp": temp,
+                            "test_class": test_class,
+                            "test_conf": test_conf,
+                            "eye_class": eye_class,
+                            "eye_conf": eye_conf,
+                            "risk": risk,
+                            "recommendation": recommendation,
+                            "created_at": created_at,
+                            "answers": answers or [],
+                            "factors": factors or [],
+                            "eye_image": eye_img,
+                            "eye_scan": eye_scan,
+                        },
+                    }
                 )
 
-            return table_data
+            return results or []
 
         except Exception as error:
             print("SEARCH ERROR:", error)
             return []
+
+    def print_patient_results_table(self, diagnostic_id):
+        try:
+            query = f"""
+            SELECT
+                q.id,
+                u.id,
+                u.name,
+                u.phone_number,
+                q.temp,
+                q.test_classification,
+                q.test_confidence,
+                q.eye_classification,
+                q.eye_confidence,
+                q.risk_level,
+                q.recommendation,
+                q.created_at
+            FROM {self.diagnostic_table} q
+            JOIN {self.user_table} u
+            ON q.patient_id = u.id
+            WHERE q.id = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (diagnostic_id,))
+                row = cur.fetchone()
+
+            if not row:
+                return None
+
+            (
+                result_id,
+                patient_id,
+                patient_name,
+                phone_number,
+                temp,
+                test_class,
+                test_conf,
+                eye_class,
+                eye_conf,
+                risk,
+                recommendation,
+                created_at,
+            ) = row
+
+            return {
+                "patient_id": f"P-{int(patient_id):03d}",
+                "patient_name": patient_name,
+                "contact_number": phone_number,
+                "temperature": float(temp) if temp else 0,
+                "test_result": test_class,
+                "test_conf": test_conf,
+                "eye_classification": eye_class,
+                "eye_conf": round(float(eye_conf), 2) if eye_conf is not None else 0,
+                "risk_level": risk,
+                "recommendation": recommendation,
+                "created_at": created_at,
+            }
+
+        except Exception as e:
+            print("PRINT DATA ERROR:", e)
+            return None
 
     # SAVE PATIENT TEMPERATURE
     def save_temperature(self, patient_id, temp):
@@ -1069,10 +1134,40 @@ class DatabaseService:
             print("SAVE RISK ERROR:", error)
             return False
 
+    def load_eye_results(self, question_id):
+        try:
+            query = f"""
+            SELECT 
+                eye_image_path,
+                eye_scan_path,
+                eye_classification,
+                eye_confidence
+            FROM {self.diagnostic_table}
+            WHERE id = %s
+            """
+
+            with self.conn.cursor() as cur:
+                cur.execute(query, (question_id,))
+                result = cur.fetchone()
+
+            if result:
+                return {
+                    "eye_image": result[0],
+                    "eye_scan": result[1],
+                    "classification": result[2],
+                    "confidence": result[3],
+                }
+
+            return None
+
+        except Exception as error:
+            print("LOAD EYE RESULTS ERROR:", error)
+            return None
+
     def get_diagnosis_results(self, question_id):
         try:
             query = f"""
-            SELECT temperature, test_classification, test_confidence, top_patient_factors, eye_classification, eye_confidence, risk_level, recommendation
+            SELECT temp, test_classification, test_confidence, top_patient_factors, eye_classification, eye_confidence, risk_level, recommendation
             FROM {self.diagnostic_table}
             WHERE id = %s
             """
@@ -1083,7 +1178,7 @@ class DatabaseService:
 
             if row:
                 return {
-                    "temperature": row[0],
+                    "temp": row[0],
                     "test_classification": row[1],
                     "test_confidence": row[2],
                     "top_factors": row[3],
@@ -1112,9 +1207,11 @@ class DatabaseService:
                 q.test_classification,
                 q.test_confidence,
                 q.eye_classification,
-                q.eye__confidence,
+                q.eye_confidence,
                 q.risk_level,
-                q.recommendation
+                q.recommendation,
+                q.created_at
+                
             FROM {self.diagnostic_table} q
             JOIN {self.user_table} u
             ON q.patient_id = u.id
@@ -1140,20 +1237,26 @@ class DatabaseService:
                 eye_confidence,
                 risk_level,
                 recommendation,
+                created_at,
             ) = row
+
+            date_str = created_at.strftime("%Y-%m-%d")
+            time_str = created_at.strftime("%I:%M %p")
 
             return {
                 "result_id": result_id,
-                "patient_id": patient_id,
+                "patient_id": f"P-{int(patient_id):03d}",
                 "patient_name": patient_name,
                 "contact_number": phone_number,
                 "temp": float(temp),
                 "test_classification": test_classification,
                 "test_confidence": test_confidence,
                 "eye_classification": eye_classification,
-                "eye_confidence": eye_confidence,
+                "eye_confidence": round(float(eye_confidence), 2),
                 "risk_level": risk_level,
                 "recommendation": recommendation,
+                "date": date_str,
+                "time": time_str,
             }
 
         except Exception as e:

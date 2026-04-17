@@ -24,7 +24,7 @@ from constants.seeds import (
     ORANGE,
 )
 from ..components.avatar import Avatar
-from ..components.messagebox import MessageBox as mb
+from CTkMessagebox import CTkMessagebox as mb
 
 
 class ScanTemperaturePage(ctk.CTkFrame):
@@ -39,6 +39,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
         )
         self.controller = controller
         self.db = controller.db
+        self.timer_running = False
 
         # IMAGE
         self.camera_prompt_img = ctk.CTkImage(
@@ -80,7 +81,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
             self,
             height=650,
             width=1000,
-            fg_color="#FFFFFF",
+            fg_color="#E2E8F0",
             border_width=2,
             border_color="#E2E8F0",
             corner_radius=15,
@@ -94,7 +95,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
             width=500,
             height=20,
             corner_radius=15,
-            fg_color="#E5E7EB",
+            fg_color="#FFFFFF",
             progress_color="#14B8A6",
         )
         self.temp_bar.place(relx=0.5, rely=0.25, anchor=ctk.CENTER)
@@ -124,6 +125,8 @@ class ScanTemperaturePage(ctk.CTkFrame):
         )
         self.actions_container.place(x=40, y=750)
 
+        self.countdown = 6
+
         self.scan_temp_btn = ctk.CTkButton(
             self.actions_container,
             image=self.scan_icon,
@@ -135,7 +138,9 @@ class ScanTemperaturePage(ctk.CTkFrame):
             fg_color=RED,
             corner_radius=10,
             # compound="center",
-            command=self.scan_temperature,
+            text_color="#FFFFFF",
+            font=("Inter", 55, "bold"),
+            command=self.start_timer,
         )
         self.scan_temp_btn.place(relx=0.5, rely=0.4, anchor=ctk.CENTER)
 
@@ -146,25 +151,25 @@ class ScanTemperaturePage(ctk.CTkFrame):
             text_color=TEXT_SECONDARY,
         ).place(relx=0.5, rely=0.85, anchor=ctk.CENTER)
 
-        self.retry_temp_btn = ctk.CTkButton(
-            self.actions_container,
-            image=self.retry_icon,
-            width=100,
-            height=90,
-            text="",
-            fg_color=BLUE,
-            corner_radius=10,
-            # compound="center",
-            command=self.retry_scan,
-        )
-        self.retry_temp_btn.place(relx=0.35, rely=0.42, anchor=ctk.CENTER)
+        # self.retry_temp_btn = ctk.CTkButton(
+        #     self.actions_container,
+        #     image=self.retry_icon,
+        #     width=100,
+        #     height=90,
+        #     text="",
+        #     fg_color=BLUE,
+        #     corner_radius=10,
+        #     # compound="center",
+        #     command=self.retry_scan,
+        # )
+        # self.retry_temp_btn.place(relx=0.35, rely=0.42, anchor=ctk.CENTER)
 
-        ctk.CTkLabel(
-            self.actions_container,
-            text="RETRY",
-            font=("Inter", 16, "bold"),
-            text_color=TEXT_SECONDARY,
-        ).place(relx=0.35, rely=0.85, anchor=ctk.CENTER)
+        # ctk.CTkLabel(
+        #     self.actions_container,
+        #     text="RETRY",
+        #     font=("Inter", 16, "bold"),
+        #     text_color=TEXT_SECONDARY,
+        # ).place(relx=0.35, rely=0.85, anchor=ctk.CENTER)
 
         self.save_temp_btn = ctk.CTkButton(
             self.actions_container,
@@ -190,7 +195,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
             self,
             height=430,
             width=380,
-            fg_color="#FFFFFF",
+            fg_color="#E2E8F0",
             border_width=2,
             border_color="#E2E8F0",
             corner_radius=15,
@@ -212,16 +217,23 @@ class ScanTemperaturePage(ctk.CTkFrame):
             font=("Inter", 20),
         ).place(x=80, y=35)
 
+        ctk.CTkLabel(
+            self,
+            text="IDEAL POSITION",
+            font=("Inter", 16, "bold"),
+            text_color=TEXT_SECONDARY,
+        ).place(x=1075, y=560)
+
         self.prompt_container = ctk.CTkFrame(
             self,
             height=270,
             width=380,
-            fg_color="#FFFFFF",
+            fg_color="#E2E8F0",
             border_width=2,
             border_color="#E2E8F0",
             corner_radius=15,
         )
-        self.prompt_container.place(x=1070, y=560)
+        self.prompt_container.place(x=1070, y=595)
 
         self.camera_prompt = ctk.CTkFrame(
             self.prompt_container,
@@ -235,6 +247,48 @@ class ScanTemperaturePage(ctk.CTkFrame):
             text="",
             image=self.camera_prompt_img,
         ).pack()
+
+    # def start_timer(self):
+    #     if self.countdown > 0:
+    #         self.countdown -= 1
+    #         self.scan_temp_btn.configure(
+    #             text=self.countdown, image=None, state="disabled"
+    #         )
+
+    #         self.after(1000, self.start_timer)
+
+    #     else:
+    #         self.scan_temperature()
+    #         self.scan_temp_btn.configure(
+    #             text="", image=self.scan_icon, state="disabled"
+    #         )
+
+    def start_timer(self):
+        if self.timer_running:
+            return
+
+        self.timer_running = True
+        self.countdown = 6
+        self._run_timer()
+
+    def _run_timer(self):
+        if not self.timer_running:
+            return
+
+        if self.countdown > 0:
+            self.countdown -= 1
+            self.scan_temp_btn.configure(
+                text=self.countdown, image=None, state="disabled"
+            )
+            self.after(1000, self._run_timer)
+        else:
+            if self.timer_running:  # extra safety
+                self.scan_temperature()
+
+            self.scan_temp_btn.configure(
+                text="", image=self.scan_icon, state="disabled"
+            )
+            self.timer_running = False
 
     def beep(self):
         try:
@@ -282,9 +336,8 @@ class ScanTemperaturePage(ctk.CTkFrame):
         temp = send_temperature()
         target = self.temp_to_progress(temp)
 
-        if not hasattr(self, "last_temp"):
+        if self.last_temp is None:
             self.last_temp = temp
-
         smooth_temp = (self.last_temp * 0.7) + (temp * 0.3)
         self.last_temp = smooth_temp
 
@@ -313,11 +366,24 @@ class ScanTemperaturePage(ctk.CTkFrame):
         error = self.validate_data()
         if error:
             mb(
+                self,
                 title="Error",
                 message=error,
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             return
 
         try:
@@ -329,34 +395,67 @@ class ScanTemperaturePage(ctk.CTkFrame):
             if question_id:
                 self.controller.current_question_id = question_id
                 mb(
+                    self,
                     title="Saved Temperature",
                     message="Temperature save successful",
                     options=("Thanks",),
                     icon="check",
-                ).show()
+                    fg_color="#FFFFFF",
+                    border_width=1,
+                    border_color="#E2E8F0",
+                    text_color="#0F172A",
+                    title_color="#0F172A",
+                    font=("Inter", 16),
+                    height=260,
+                    button_color="#14B8A6",
+                    button_hover_color="#0D9488",
+                    button_text_color="#FFFFFF",
+                    button_width=100,
+                    button_height=55,
+                )
+                self.stop_timer()
                 self.controller.change_window("QuestionsPage")
             else:
                 mb(
+                    self,
                     title="Error",
                     message="Failed to save responses",
                     options=("Okay",),
                     icon="cancel",
-                ).show()
+                    fg_color="#FFFFFF",
+                    border_width=1,
+                    border_color="#E2E8F0",
+                    text_color="#0F172A",
+                    title_color="#0F172A",
+                    font=("Inter", 16),
+                    height=260,
+                    button_color="#14B8A6",
+                    button_hover_color="#0D9488",
+                    button_text_color="#FFFFFF",
+                    button_width=100,
+                    button_height=55,
+                )
 
         except Exception as error:
             mb(
+                self,
                 title="Error",
                 message=error,
-                options=("Okay",),
+                options=("Okay"),
                 icon="cancel",
-            ).show()
-
-    def retry_scan(self):
-        self.after(500, self.scan_temperature)
-
-    def on_show(self):
-        self.beep()
-        self.card_builder()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
     def card_builder(self):
         start_y = 90
@@ -367,11 +466,12 @@ class ScanTemperaturePage(ctk.CTkFrame):
 
             card = ctk.CTkFrame(
                 self.instruction_container,
-                width=300,
-                height=60,
-                fg_color="transparent",
+                width=340,
+                height=70,
+                fg_color="#EEF2F7",
+                corner_radius=12,
             )
-            card.place(x=40, y=y_position)
+            card.place(x=20, y=y_position)
 
             # ICON
             icon_image = (
@@ -384,7 +484,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
                 width=50,
                 height=50,
                 fg_color="#14B8A6",
-            ).place(x=0, y=7)
+            ).place(x=12, y=10)
 
             # TITLE
             ctk.CTkLabel(
@@ -392,7 +492,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
                 text=item.get("title", ""),
                 font=("Inter", 17),
                 text_color=TEXT_PRIMARY,
-            ).place(x=60, y=5)
+            ).place(x=70, y=7)
 
             # SUBTITLE
             ctk.CTkLabel(
@@ -400,4 +500,26 @@ class ScanTemperaturePage(ctk.CTkFrame):
                 text=item.get("sub_title", ""),
                 font=("Poppins", 14),
                 text_color=TEXT_SECONDARY,
-            ).place(x=60, y=28)
+            ).place(x=70, y=30)
+
+    def stop_timer(self):
+        self.timer_running = False
+
+    def clear_fields(self):
+        # 🔥 RESET STATE
+        self.rounded_temp = None
+        self.last_temp = None
+        self.countdown = 6
+        self.curr_progress = 0.0
+
+        # 🔥 RESET UI
+        self.temp_bar.set(0)
+        self.temp_label.configure(text="--.- °C")
+        self.status_label.configure(text="--", text_color=TEXT_SECONDARY)
+
+        # 🔥 RESET BUTTON
+        self.scan_temp_btn.configure(text="", image=self.scan_icon, state="normal")
+
+    def on_show(self):
+        self.beep()
+        self.card_builder()

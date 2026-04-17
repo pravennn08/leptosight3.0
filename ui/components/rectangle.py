@@ -38,6 +38,8 @@ class Rectangle(ctk.CTkFrame):
             text_color=text_color,
             image=self.image,
             compound="left" if image else None,  # image + text layout
+            wraplength=660,
+            justify="left",
         )
 
         self.label.place(relx=0.5, rely=0.5, anchor="center")

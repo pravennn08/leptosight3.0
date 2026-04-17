@@ -15,43 +15,6 @@ class EyeClassificationModel:
             self.model = YOLO(MODEL_PATH)
         return self.model
 
-    # def predict(
-    #     self,
-    #     image_path,
-    #     save_dir,
-    #     conf=0.60,  # 🔥 match your working script
-    #     classes=[0, 1, 2, 3],
-    # ):
-
-    #     model = self.load()
-
-    #     results = model.predict(
-    #         source=image_path,
-    #         conf=conf,
-    #         classes=classes,
-    #         show_conf=True,
-    #         save=False,
-    #         show=False,
-    #     )
-
-    #     os.makedirs(save_dir, exist_ok=True)
-
-    #     filename = os.path.splitext(os.path.basename(image_path))[0]
-    #     save_path = os.path.join(save_dir, f"{filename}_pred.jpg")
-
-    #     plotted_img = None
-
-    #     for r in results:
-    #         plotted_img = r.plot()  # ✅ same as your working code
-
-    #     # fallback (just in case)
-    #     if plotted_img is None:
-    #         plotted_img = cv2.imread(image_path)
-
-    #     cv2.imwrite(save_path, plotted_img)
-
-    #     return {"eye_scan_path": save_path}
-
     def predict(
         self,
         image_path,

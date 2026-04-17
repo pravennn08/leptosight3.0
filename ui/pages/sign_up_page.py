@@ -28,7 +28,7 @@ class SignUpPage(ctk.CTkFrame):
         # SYSTEM LOGO
         self.logo_img = ctk.CTkImage(
             light_image=Image.open(LOGO),
-            size=(71, 71),
+            size=(82, 82),
         )
 
         # CARD CONTAINER
@@ -52,7 +52,7 @@ class SignUpPage(ctk.CTkFrame):
         # )
         Square(
             self.container,
-            size=85,
+            size=90,
             image=self.logo_img,
             fg_color=PRIMARY,
         ).place(relx=0.36, y=0, anchor=ctk.N)
