@@ -1292,155 +1292,164 @@ class DatabaseService:
             print("Save PDF Path Error:", e)
             return False
 
-    # FETCH TOTAL USERS
-    def fetch_users(self):
-        pass
+    # FETCH TOTAL USER, DIAGNOSTICS, SEVERE RISK CASES, LAST ACTIVITY(USED UPDATED AT FROM USERS TABLE )
+    def fetch_admin_stats(self):
+        try:
+            with self.conn.cursor() as cur:
 
-    # FETCH NEW USERS
-    def fetch_new_users(self):
-        pass
+                # 🔥 MAIN QUERY
+                query = f"""
+                SELECT
+                    (SELECT COUNT(*) FROM {self.user_table}) AS total_users,
 
-    # FETCH PATIENTS
-    def fetch_patients(self):
-        pass
+                    (SELECT COUNT(*) FROM {self.diagnostic_table}) AS total_test,
 
-    # FETCH TOTAL USERS
-    def fetch_users(self):
-        pass
+                    (SELECT COUNT(*) 
+                    FROM {self.diagnostic_table} 
+                    WHERE LOWER(risk_level) = 'severe') AS severe_cases,
 
-    # FETCH NEW USERS
-    def fetch_new_users(self):
-        pass
+                    (SELECT MAX(updated_at) FROM {self.user_table}) AS last_activity
+                """
 
-    # FETCH PERSONNEL
-    def fetch_personnel(self):
-        pass
+                cur.execute(query)
+                result = cur.fetchone()
 
-    # # EFFICIENT COUNTING FOR CARDS
-    # def count_user_tests(self, patient_id):
-    #     query = f"""
-    #     SELECT COUNT(*)
-    #     FROM {self.diagnostic_table}
-    #     WHERE patient_id = %s
-    #     """
+            if not result:
+                return None
 
-    #     with self.conn.cursor() as cur:
-    #         cur.execute(query, (patient_id,))
-    #         return cur.fetchone()[0]
+            total_users, total_test, severe_cases, last_activity = result
 
-    # # ADMIN SIDE
-    # def fetch_patients_and_personnel(self):
-    #     try:
-    #         query = f"""
-    #         SELECT
-    #             id,
-    #             name,
-    #             role
-    #         FROM {self.user_table}
-    #         WHERE role IN ('patient', 'personnel')
-    #         ORDER BY created_at DESC
-    #         """
+            def time_ago(dt):
+                if not dt:
+                    return "No activity"
 
-    #         with self.conn.cursor() as cur:
-    #             cur.execute(query)
-    #             return cur.fetchall()
+                now = datetime.now(dt.tzinfo)
+                diff = now - dt
 
-    #     except Exception as error:
-    #         print(error)
-    #         return []
-    #     pass
+                seconds = int(diff.total_seconds())
 
-    # # FETCH PATIENTS
-    # def fetch_patients(self):
-    #     try:
-    #         query = f"""
-    #         SELECT
-    #             id,
-    #             name,
-    #             email
-    #         FROM {self.user_table}
-    #         WHERE role = 'patient'
-    #         ORDER BY created_at DESC
-    #         """
+                if seconds < 60:
+                    return "Just now"
+                elif seconds < 3600:
+                    mins = seconds // 60
+                    return f"{mins} minute{'s' if mins > 1 else ''} ago"
+                elif seconds < 86400:
+                    hours = seconds // 3600
+                    return f"{hours} hour{'s' if hours > 1 else ''} ago"
+                else:
+                    days = seconds // 86400
+                    return f"{days} day{'s' if days > 1 else ''} ago"
 
-    #         with self.conn.cursor() as cur:
-    #             cur.execute(query)
-    #             return cur.fetchall()
+            return {
+                "total_users": total_users or 0,
+                "total_test": total_test or 0,
+                "severe_cases": severe_cases or 0,
+                "last_activity": time_ago(last_activity),
+            }
 
-    #     except Exception as error:
-    #         print(error)
-    #         return []
+        except Exception as error:
+            print("FETCH ADMIN STATS ERROR:", error)
+            return None
 
-    # # FETCH PERSONNEL
-    # def fetch_personnel(self):
-    #     try:
-    #         query = f"""
-    #         SELECT
-    #             id,
-    #             name,
-    #             email,
-    #             DATE(created_at),
-    #             DATE(updated_at)
-    #         FROM {self.user_table}
-    #         WHERE role = 'personnel'
-    #         ORDER BY created_at DESC
-    #         """
+    # FETCH NEW USERS WEEKLY
+    def fetch_weekly_users(self):
+        try:
+            with self.conn.cursor() as cur:
 
-    #         with self.conn.cursor() as cur:
-    #             cur.execute(query)
-    #             return cur.fetchall()
+                query = f"""
+                SELECT 
+                    EXTRACT(DOW FROM created_at) AS dow,
+                    COUNT(*) AS total
+                FROM {self.user_table}
+                WHERE created_at >= NOW() - INTERVAL '7 days'
+                GROUP BY dow
+                ORDER BY dow
+                """
 
-    #     except Exception as error:
-    #         print(error)
-    #         return []
+                cur.execute(query)
+                rows = cur.fetchall()
 
-    # # SEARCH PATIENT
-    # def search_patient(self, keyword):
-    #     try:
-    #         query = f"""
-    #         SELECT id, name, email, created_at, updated_at
-    #         FROM {self.user_table}
-    #         WHERE role = 'patient'
-    #         AND (
-    #             name ILIKE %s
-    #             OR email ILIKE %s
-    #         )
-    #         ORDER BY created_at DESC
-    #         """
+            # =========================
+            # MAP DOW → DAY NAME
+            # PostgreSQL: 0=Sunday ... 6=Saturday
+            # =========================
+            dow_map = {
+                0: "Sun",
+                1: "Mon",
+                2: "Tue",
+                3: "Wed",
+                4: "Thu",
+                5: "Fri",
+                6: "Sat",
+            }
 
-    #         search_term = f"%{keyword}%"
+            # Initialize all days = 0
+            weekly_data = {
+                "Mon": 0,
+                "Tue": 0,
+                "Wed": 0,
+                "Thu": 0,
+                "Fri": 0,
+                "Sat": 0,
+                "Sun": 0,
+            }
 
-    #         with self.conn.cursor() as cur:
-    #             cur.execute(query, (search_term, search_term))
-    #             return cur.fetchall()
+            # Fill from DB
+            for dow, count in rows:
+                day_name = dow_map[int(dow)]
+                weekly_data[day_name] = count
 
-    #     except Exception as error:
-    #         print(error)
-    #         return []
+            # ✅ ORDER (Mon → Sun)
+            ordered = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-    # # SEARCH PATIENT AND PERSONNEL
-    # def search_patient_and_personnel(self, keyword):
-    #     try:
-    #         query = f"""
-    #         SELECT id, name, role
-    #         FROM {self.user_table}
-    #         WHERE role IN ('patient', 'personnel')
-    #         AND (
-    #             name ILIKE %s
-    #             OR role::text ILIKE %s
-    #         )
-    #         ORDER BY created_at DESC
-    #         """
+            return [{"day": day, "users": weekly_data[day]} for day in ordered]
 
-    #         term = f"%{keyword}%"
+        except Exception as error:
+            print("FETCH WEEKLY USERS ERROR:", error)
+            return None
 
-    #         with self.conn.cursor() as cur:
-    #             cur.execute(query, (term, term))
-    #             return cur.fetchall()
+    # FETCH RISK LEVEL IN DIAGNOSIS TABLE
+    def fetch_risk_level(self):
+        try:
+            with self.conn.cursor() as cur:
 
-    #     except Exception as error:
-    #         print(error)
-    #         return []
+                query = f"""
+                SELECT LOWER(risk_level) AS level, COUNT(*) AS total
+                FROM {self.diagnostic_table}
+                GROUP BY LOWER(risk_level)
+                """
+
+                cur.execute(query)
+                rows = cur.fetchall()
+
+            # =========================
+            # DEFAULT VALUES (IMPORTANT)
+            # =========================
+            risk_map = {
+                "safe": 0,
+                "mild": 0,
+                "moderate": 0,
+                "severe": 0,
+            }
+
+            # Fill from DB
+            for level, count in rows:
+                if level in risk_map:
+                    risk_map[level] = count
+
+            # =========================
+            # FORMAT FOR CHART
+            # =========================
+            return [
+                {"classification": "Safe", "value": risk_map["safe"]},
+                {"classification": "Mild", "value": risk_map["mild"]},
+                {"classification": "Moderate", "value": risk_map["moderate"]},
+                {"classification": "Severe", "value": risk_map["severe"]},
+            ]
+
+        except Exception as error:
+            print("FETCH RISK LEVEL ERROR:", error)
+            return None
 
     def close(self):
         self.cursor.close()

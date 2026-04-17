@@ -92,6 +92,7 @@ class DashboardPage(ctk.CTkFrame):
             hover_color=SECONDARY,
             text_color="#FFFFFF",
             corner_radius=9,
+            command=lambda: self.controller.change_window("PatientRecordsPage"),
         ).place(x=110, y=105)
 
         self.last_activity_frame = ctk.CTkFrame(
@@ -227,45 +228,57 @@ class DashboardPage(ctk.CTkFrame):
             ).place(x=40, y=50)
 
     def on_show(self):
+        # user = self.controller.current_user
 
-        stats = None
+        # if not user:
+        #     return
+
+        # user_name = user[1]
+        # self.welcome_label.configure(text=f"Welcome, {user_name}!")
+
+        stats = self.db.fetch_admin_stats()
+
         if not stats:
             stats = {
-                "total_tests": 0,
-                "total_reports": 0,
-                "last_test_date": 0,
+                "total_users": 0,
+                "total_test": 0,
+                "severe_cases": 0,
                 "last_activity": "No activity",
             }
 
         self.home_cards_data = [
-            {"title": "Total Users", "value": stats["total_tests"]},
-            {"title": "Total Test Conducted", "value": stats["total_reports"]},
-            {"title": "Severe Risk Cases", "value": stats["last_test_date"]},
+            {"title": "Total Users", "value": stats["total_users"]},
+            {"title": "Total Test Conducted", "value": stats["total_test"]},
+            {"title": "Severe Risk Cases", "value": stats["severe_cases"]},
         ]
+
+        self.last_activity_label.configure(text=stats["last_activity"])
 
         self.build_home_cards()
 
-        line_chart_data = None
+        line_chart_data = self.db.fetch_weekly_users()
+
         if not line_chart_data:
             line_chart_data = [
-                {"day": "Mon", "users": 5},
-                {"day": "Tue", "users": 3},
-                {"day": "Wed", "users": 7},
-                {"day": "Thu", "users": 2},
-                {"day": "Fri", "users": 6},
-                {"day": "Sat", "users": 4},
-                {"day": "Sun", "users": 1},
+                {"day": "Mon", "users": 0},
+                {"day": "Tue", "users": 0},
+                {"day": "Wed", "users": 0},
+                {"day": "Thu", "users": 0},
+                {"day": "Fri", "users": 0},
+                {"day": "Sat", "users": 0},
+                {"day": "Sun", "users": 0},
             ]
+
         self.after(500, lambda: self.line_chart.update_chart(line_chart_data))
 
-        bar_chart_data = None
+        bar_chart_data = self.db.fetch_risk_level()
 
         if not bar_chart_data:
             bar_chart_data = [
-                {"classification": "Safe", "value": 10},
-                {"classification": "Mild", "value": 20},
-                {"classification": "Moderate", "value": 30},
-                {"classification": "Severe", "value": 70},
+                {"classification": "Safe", "value": 0},
+                {"classification": "Mild", "value": 0},
+                {"classification": "Moderate", "value": 0},
+                {"classification": "Severe", "value": 0},
             ]
 
         self.after(500, lambda: self.bar_chart.update_chart(bar_chart_data))
