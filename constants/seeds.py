@@ -18,7 +18,7 @@ SETTINGS = os.path.join(BASE_DIR, "assets", "icons", "settings.png")
 CHEVRON = os.path.join(BASE_DIR, "assets", "icons", "chevron.png")
 LOGOUT = os.path.join(BASE_DIR, "assets", "icons", "logout.png")
 DASHBOARD = os.path.join(BASE_DIR, "assets", "icons", "dashboard.png")
-PATIENT_RECORDS = os.path.join(BASE_DIR, "assets", "icons", "folders.png")
+# PATIENT_RECORDS = os.path.join(BASE_DIR, "assets", "icons", "folders.png")
 USERS = os.path.join(BASE_DIR, "assets", "icons", "users.png")
 NEXT = os.path.join(BASE_DIR, "assets", "icons", "next.png")
 BELL = os.path.join(BASE_DIR, "assets", "icons", "bell.png")
@@ -50,6 +50,8 @@ EVAL = os.path.join(BASE_DIR, "assets", "icons", "eval.png")
 SELECT = os.path.join(BASE_DIR, "assets", "icons", "select.png")
 SHIELD = os.path.join(BASE_DIR, "assets", "icons", "warning.png")
 PERCENT = os.path.join(BASE_DIR, "assets", "icons", "percent.png")
+USER = os.path.join(BASE_DIR, "assets", "icons", "user.png")
+LIB = os.path.join(BASE_DIR, "assets", "icons", "lib.png")
 
 
 # COLOR PALETTE

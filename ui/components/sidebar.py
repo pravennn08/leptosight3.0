@@ -14,11 +14,13 @@ from constants.seeds import (
     RECORDS,
     CHEVRON,
     DASHBOARD,
-    PATIENT_RECORDS,
+    # PATIENT_RECORDS,
     USERS,
     SIDEBAR_ACTIVE,
     SIDEBAR_HOVER,
 )
+from ..components.square import Square
+from ..components.rectangle import Rectangle
 
 
 class AppSideBar(ctk.CTkFrame):
@@ -37,7 +39,7 @@ class AppSideBar(ctk.CTkFrame):
         self.toplevel_window = None
 
         # IMAGES AND ICONS
-        self.logo_img = ctk.CTkImage(Image.open(LOGO), size=(71, 71))
+        self.logo_img = ctk.CTkImage(Image.open(LOGO), size=(60, 60))
         self.home_icon = ctk.CTkImage(Image.open(HOME), size=(22, 22))
         self.test_icon = ctk.CTkImage(Image.open(TEST), size=(24, 24))
         self.records_icon = ctk.CTkImage(Image.open(RECORDS), size=(24, 24))
@@ -45,24 +47,38 @@ class AppSideBar(ctk.CTkFrame):
         self.settings_icon = ctk.CTkImage(Image.open(SETTINGS), size=(24, 24))
         self.chevron_icon = ctk.CTkImage(Image.open(CHEVRON), size=(24, 24))
         self.dashboard_icon = ctk.CTkImage(Image.open(DASHBOARD), size=(24, 24))
-        self.patient_records_icon = ctk.CTkImage(
-            Image.open(PATIENT_RECORDS), size=(24, 24)
-        )
+        # self.patient_records_icon = ctk.CTkImage(
+        #     Image.open(PATIENT_RECORDS), size=(24, 24)
+        # )
         self.users_icon = ctk.CTkImage(Image.open(USERS), size=(24, 24))
 
         # LOGO
         self.logo_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.logo_frame.pack(fill="x", padx=10, pady=(10, 5))
 
-        self.logo_label = ctk.CTkLabel(
+        Square(
+            self.logo_frame,
+            size=70,
+            image=self.logo_img,
+            fg_color=PRIMARY,
+        ).pack(anchor="w", padx=10, pady=5)
+        ctk.CTkLabel(
             self.logo_frame,
             text="LeptoSight",
-            image=self.logo_img,
-            compound="left",
             text_color=TEXT_PRIMARY,
             font=("Inter", 25, "bold"),
+        ).place(x=100, y=15)
+        self.user_role = Rectangle(
+            self.logo_frame,
+            width=65,
+            height=28,
+            text="",
+            fg_color=PRIMARY,
+            text_color="#FFFFFF",
+            font=("Arial", 12, "bold"),
+            corner_radius=5,
         )
-        self.logo_label.pack(anchor="w", padx=10, pady=5)
+        self.user_role.place(x=100, y=48)
 
         # DIVIDER
         self.divider = ctk.CTkFrame(
@@ -178,20 +194,19 @@ class AppSideBar(ctk.CTkFrame):
                 widget.destroy()
 
     def get_role(self):
-        return "patient"
+        return "admin"
+        # user = self.controller.current_user
 
-    # def get_role(self):
-    #     user = self.controller.current_user
+        # if not user:
+        #     return "patient"
 
-    #     if not user:
-    #         return "patient"
-
-    #     print("Printing Role:", user[5])
-    #     return user[5]
+        # print("Printing Role:", user[5])
+        # return user[5]
 
     def build_menu(self):
         self.clear_menu_buttons()
         role = self.get_role()
+        self.build_role_badge()
 
         if role in ("admin", "personnel"):
             self.build_admin_menu()
@@ -200,8 +215,36 @@ class AppSideBar(ctk.CTkFrame):
             self.build_patient_menu()
             self.set_active(self.home_btn)
 
+    def build_role_badge(self):
+        ROLE_BADGE_CONFIG = {
+            "admin": {"width": 55, "text": "ADMIN"},
+            "personnel": {"width": 90, "text": "PERSONNEL"},
+            "patient": {"width": 65, "text": "PATIENT"},
+        }
+
+        role = self.get_role()
+
+        config = ROLE_BADGE_CONFIG.get(role, ROLE_BADGE_CONFIG["patient"])
+
+        if hasattr(self, "user_role") and self.user_role.winfo_exists():
+            self.user_role.configure(width=config["width"])
+            self.user_role.set_text(config["text"])  # ✅ FIX HERE
+        else:
+            self.user_role = Rectangle(
+                self.logo_frame,
+                width=config["width"],
+                height=28,
+                text=config["text"],
+                fg_color=PRIMARY,
+                text_color="#FFFFFF",
+                font=("Arial", 12, "bold"),
+                corner_radius=5,
+            )
+            self.user_role.place(x=100, y=48)
+
     # ADMIN MENU
     def build_admin_menu(self):
+
         self.dashboard_btn = self.button_builder(
             "Dashboard",
             self.dashboard_icon,
@@ -216,7 +259,7 @@ class AppSideBar(ctk.CTkFrame):
 
         self.patient_records_btn = self.button_builder(
             "Patient Records",
-            self.patient_records_icon,
+            self.records_icon,
             lambda: self.navigate("PatientRecordsPage"),
         )
 

@@ -269,7 +269,14 @@ class HomePage(ctk.CTkFrame):
 
         line_chart_data = self.db.get_line_chart_data(user_id)
         if not line_chart_data:
-            line_chart_data = {"session": "Session 1", "test": 0.00, "eye": 0.00}
+            line_chart_data = [
+                {
+                    "session": "Session 1",
+                    "temp": 0.00,
+                    "test": 0.00,
+                    "eye": 0.00,
+                }
+            ]
         self.after(500, lambda: self.line_chart.update_chart(line_chart_data))
 
         bar_chart_data = self.db.get_bar_chart_data(user_id)

@@ -98,12 +98,15 @@ class AccountModal(ctk.CTkToplevel):
             height=40,
             width=235,
             corner_radius=8,
-            command=lambda: [
-                self.destroy(),
-                self.controller.change_window("SignInPage"),
-            ],
+            command=self.handle_logout,
         )
         self.logout_btn.place(x=10, y=120)
+
+    def handle_logout(self):
+        self.destroy()
+        self.controller.db.logout()
+        self.controller.current_user = None
+        self.controller.change_window("SignInPage")
 
     def handle_action(self, action):
         self.destroy()

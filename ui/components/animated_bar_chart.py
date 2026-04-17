@@ -6,7 +6,7 @@ from collections import Counter
 class AnimatedBarChart(ctk.CTkFrame):
 
     def __init__(
-        self, master, title="Bar Chart", lines_config=None, bg="#F8FAFC", **kwargs
+        self, master, title="Bar Chart", lines_config=None, bg="#E2E8F0", **kwargs
     ):
         super().__init__(master, fg_color="transparent", **kwargs)
 
@@ -24,7 +24,7 @@ class AnimatedBarChart(ctk.CTkFrame):
         self.title_label = ctk.CTkLabel(
             self.header_frame,
             text=title,
-            font=("Inter", 23),
+            font=("Inter", 22),
             text_color="#111827",
         )
         self.title_label.pack(side="left")
@@ -45,7 +45,7 @@ class AnimatedBarChart(ctk.CTkFrame):
             text_color="#FFFFFF",
             dropdown_fg_color="#FFFFFF",
             dropdown_text_color="#0F172A",
-            dropdown_hover_color="#E2E8F0",
+            dropdown_hover_color="#D4D6DA",
             dropdown_font=("Inter", 18),
             corner_radius=9,
         )
@@ -116,7 +116,9 @@ class AnimatedBarChart(ctk.CTkFrame):
             y = top_pad + (chart_height / steps) * i
             value = scale_max - (scale_max / steps) * i
 
-            self.canvas.create_line(left_pad, y, W - right_pad, y, fill="#E5E7EB")
+            self.canvas.create_line(
+                left_pad, y, W - right_pad, y, fill="#CBD5E1", width=1
+            )
 
             self.canvas.create_text(
                 30,

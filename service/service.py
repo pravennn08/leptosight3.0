@@ -245,7 +245,7 @@ class DatabaseService:
         try:
             query = f"""
             SELECT id, name, email, phone_number, password, role, created_at,
-                is_verified, last_login_at
+            is_verified, recovery_setup, last_login_at, otp_expires_at
             FROM {self.user_table}
             WHERE email = %s
             """
@@ -261,8 +261,8 @@ class DatabaseService:
             if isinstance(db_password, str):
                 db_password = db_password.encode()
 
-            is_verified = user[6]
-            recovery_setup = user[7]
+            is_verified = user[7]
+            recovery_setup = user[8]
 
             # WRONG PASSWORD → increment limiter
             if not bcrypt.checkpw(password.encode(), db_password):
@@ -279,7 +279,16 @@ class DatabaseService:
             # SUCCESS → reset limiter
             self.rate_limit.reset_rate_limit("login", email)
 
+            otp_expires_at = user[9]  # adjust index if needed
+            now = datetime.now(timezone.utc)
+
             if not is_verified:
+                phone_number = user[3]
+
+                # 🔥 resend only if expired or missing
+                if not otp_expires_at or otp_expires_at < now:
+                    self.generate_and_send_otp(phone_number)
+
                 self.current_user = user
                 return "NOT_VERIFIED"
 

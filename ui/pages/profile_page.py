@@ -292,7 +292,7 @@ class ProfilePage(ctk.CTkFrame):
         phone_number = user[3]
         verified = user[7]
         date_create = user[6]
-        last_login = user[8]
+        last_login = user[9]
 
         if verified:
             if not self.badge.winfo_ismapped():

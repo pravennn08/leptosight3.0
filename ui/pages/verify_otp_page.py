@@ -11,7 +11,7 @@ from constants.seeds import (
     BLUE,
 )
 from ..components.square import Square
-from ..components.messagebox import MessageBox as mb
+from CTkMessagebox import CTkMessagebox as mb
 
 
 class VerifyOTPPage(ctk.CTkFrame):
@@ -99,8 +99,8 @@ class VerifyOTPPage(ctk.CTkFrame):
         for i in range(6):
             entry = ctk.CTkEntry(
                 self.otp_frame,
-                width=90,
-                height=90,
+                width=85,
+                height=85,
                 justify="center",
                 font=("Poppins", 35),
                 validate="key",
@@ -146,22 +146,48 @@ class VerifyOTPPage(ctk.CTkFrame):
         if len(otp) != 6:
             # mb.showerror("Invalid OTP", "Please enter the 6-digit code.")
             mb(
+                self,
                 title="Invalid OTP",
                 message="Please enter the 6-digit code.",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             return
 
         user = self.controller.current_user
         if not user:
             # mb.showerror("Session Error", "Verification session expired.")
             mb(
+                self,
                 title="Session Error",
                 message="Verification session expired.",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             self.controller.change_window("SignInPage")
             return
 
@@ -177,11 +203,24 @@ class VerifyOTPPage(ctk.CTkFrame):
             #     f"Too many OTP attempts.\nTry again in {minutes} minute(s).",
             # )
             mb(
+                self,
                 title="Too Many Attempts",
                 message=f"Too many OTP attempts.\nTry again in {minutes} minute(s).",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             return
 
         if result == "SETUP_RECOVERY_REQUIRED":
@@ -190,52 +229,117 @@ class VerifyOTPPage(ctk.CTkFrame):
             #     "Verification successful. Please complete account verification.",
             # )
             mb(
+                self,
                 title="OTP Verification",
                 message="Verification successful. Please complete account verification.",
                 options=("Got It",),
                 icon="check",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
             self.controller.change_window("AccountVerificationPage")
 
         elif result == "VERIFIED":
             # mb.showinfo("OTP", "Verification successful. Please login.")
             mb(
+                self,
                 title="OTP Verification",
                 message="Verification successful. Please login your account.",
                 options=("Got It",),
                 icon="check",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
             self.controller.change_window("SignInPage")
 
         elif result == "INVALID_OTP":
             # mb.showerror("OTP", "Incorrect OTP.")
             mb(
+                self,
                 title="OTP Invalid",
                 message="Incorrect OTP.",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             self.clear_fields()
         elif result == "OTP_EXPIRED":
             self.clear_fields()
             # mb.showerror("OTP", "OTP expired.")
             mb(
+                self,
                 title="OTP Expired",
                 message="OTP expired.",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
         else:
             self.clear_fields()
             # mb.showerror("OTP", "Verification failed.")
             mb(
+                self,
                 title="OTP Failed",
                 message="Verification failed.",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
     def start_timer(self):
         if self.countdown > 0:
@@ -252,11 +356,24 @@ class VerifyOTPPage(ctk.CTkFrame):
         if self.controller.db.resend_otp(phone):
             # mb.showinfo("OTP", "New OTP sent.")
             mb(
+                self,
                 title="Resend OTP",
                 message="New OTP sent.",
                 options=("Thanks",),
                 icon="info",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
         # reset timer
         self.countdown = 60

@@ -11,7 +11,7 @@ from constants.seeds import (
     CALENDAR,
 )
 from ..components.square import Square
-from ..components.messagebox import MessageBox as mb
+from CTkMessagebox import CTkMessagebox as mb
 from datetime import datetime
 
 
@@ -179,7 +179,7 @@ class AccountVerificationPage(ctk.CTkFrame):
         self.calendar = Calendar(
             self.cal_window,
             selectmode="day",
-            date_pattern="m/d/yy",
+            date_pattern="mm/dd/yyyy",
             background="#FFFFFF",
             foreground="#0F172A",
             headersbackground="#F1F5F9",
@@ -232,11 +232,24 @@ class AccountVerificationPage(ctk.CTkFrame):
         if error:
             # mb.showerror("Account Verification", error)
             mb(
+                self,
                 title="Account Verification",
                 message=error,
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
             return
 
@@ -245,11 +258,24 @@ class AccountVerificationPage(ctk.CTkFrame):
         if not user:
             # mb.showerror("Session Error", "Session expired.")
             mb(
+                self,
                 title="Session Error",
                 message="Session expired.",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             self.controller.change_window("SignInPage")
             return
 
@@ -269,7 +295,19 @@ class AccountVerificationPage(ctk.CTkFrame):
                 message="Account setup complete.",
                 options=("Thanks",),
                 icon="check",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
             self.clear_fields()
             self.controller.change_window("SignInPage")
@@ -280,7 +318,19 @@ class AccountVerificationPage(ctk.CTkFrame):
                 message="Failed to save recovery details.",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
     def on_show(self):
         pass

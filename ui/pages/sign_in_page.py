@@ -62,7 +62,7 @@ class SignInPage(ctk.CTkFrame):
             fg_color=PRIMARY,
         ).place(relx=0.36, y=0, anchor=ctk.N)
         ctk.CTkLabel(
-            self.container, text="LeptoSight", font=("Arial", 34, "bold")
+            self.container, text="LeptoSight", font=("Inter", 30, "bold")
         ).place(relx=0.62, y=30, anchor=ctk.N)
 
         # HEADER
@@ -96,8 +96,9 @@ class SignInPage(ctk.CTkFrame):
             height=60,
             corner_radius=9,
             font=("Roboto", 20),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
+            fg_color="#E2E8F0",
+            text_color=TEXT_SECONDARY,
+            border_width=0,
         )
         self.email_entry.place(x=30, y=290)
 
@@ -116,9 +117,9 @@ class SignInPage(ctk.CTkFrame):
             height=60,
             corner_radius=9,
             font=("Roboto", 20),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
-            border_width=2,
+            fg_color="#E2E8F0",
+            text_color=TEXT_SECONDARY,
+            border_width=0,
         )
         self.password_entry.place(x=30, y=405)
 

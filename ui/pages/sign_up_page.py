@@ -12,7 +12,7 @@ from constants.seeds import (
 )
 
 from service.models.user_model import User
-from ..components.messagebox import MessageBox as mb
+from CTkMessagebox import CTkMessagebox as mb
 from ..components.square import Square
 
 
@@ -55,11 +55,11 @@ class SignUpPage(ctk.CTkFrame):
             size=90,
             image=self.logo_img,
             fg_color=PRIMARY,
-        ).place(relx=0.36, y=0, anchor=ctk.N)
+        ).place(relx=0.36, y=20, anchor=ctk.N)
 
         ctk.CTkLabel(
-            self.container, text="LeptoSight", font=("Arial", 30, "bold")
-        ).place(relx=0.62, y=30, anchor=ctk.N)
+            self.container, text="LeptoSight", font=("Inter", 30, "bold")
+        ).place(relx=0.62, y=50, anchor=ctk.N)
 
         # HEADER
         ctk.CTkLabel(
@@ -67,7 +67,7 @@ class SignUpPage(ctk.CTkFrame):
             text="Create an account",
             font=("Roboto", 22),
             text_color=TEXT_PRIMARY,
-        ).place(x=30, y=120)
+        ).place(x=30, y=155)
 
         # SUB HEADER
         ctk.CTkLabel(
@@ -75,7 +75,7 @@ class SignUpPage(ctk.CTkFrame):
             text="Enter your information below to create your account",
             font=("Roboto", 17.5),
             text_color=TEXT_SECONDARY,
-        ).place(x=30, y=155)
+        ).place(x=30, y=195)
 
         # NAME
         ctk.CTkLabel(
@@ -83,7 +83,7 @@ class SignUpPage(ctk.CTkFrame):
             text="Full Name",
             font=("Roboto", 18),
             text_color=TEXT_PRIMARY,
-        ).place(x=30, y=200)
+        ).place(x=30, y=250)
 
         # NAME ENTRY
 
@@ -93,11 +93,11 @@ class SignUpPage(ctk.CTkFrame):
             height=55,
             corner_radius=9,
             font=("Roboto", 18),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
-            border_width=2,
+            fg_color="#E2E8F0",
+            text_color=TEXT_SECONDARY,
+            border_width=0,
         )
-        self.name_entry.place(x=30, y=235)
+        self.name_entry.place(x=30, y=285)
 
         # EMAIL
         ctk.CTkLabel(
@@ -105,7 +105,7 @@ class SignUpPage(ctk.CTkFrame):
             text="Email",
             font=("Roboto", 18),
             text_color=TEXT_PRIMARY,
-        ).place(x=30, y=300)
+        ).place(x=30, y=350)
 
         # EMAIL ENTRY
         self.email_entry = ctk.CTkEntry(
@@ -114,11 +114,11 @@ class SignUpPage(ctk.CTkFrame):
             height=55,
             corner_radius=9,
             font=("Roboto", 18),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
-            border_width=2,
+            fg_color="#E2E8F0",
+            text_color=TEXT_SECONDARY,
+            border_width=0,
         )
-        self.email_entry.place(x=30, y=335)
+        self.email_entry.place(x=30, y=385)
 
         # PHONE NUMBER
         ctk.CTkLabel(
@@ -126,20 +126,20 @@ class SignUpPage(ctk.CTkFrame):
             text="Phone Number",
             font=("Roboto", 18),
             text_color=TEXT_PRIMARY,
-        ).place(x=30, y=400)
+        ).place(x=30, y=450)
 
         # # PHONE NUMBER ENTRY
         self.phone_number_entry = ctk.CTkEntry(
             self.container,
-            width=540,
-            height=55,
+            width=260,
+            height=50,
             corner_radius=9,
             font=("Roboto", 18),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
-            border_width=2,
+            fg_color="#E2E8F0",
+            text_color=TEXT_SECONDARY,
+            border_width=0,
         )
-        self.phone_number_entry.place(x=30, y=435)
+        self.phone_number_entry.place(x=30, y=485)
 
         # ROLE
         ctk.CTkLabel(
@@ -147,7 +147,7 @@ class SignUpPage(ctk.CTkFrame):
             text="Role",
             font=("Roboto", 18),
             text_color=TEXT_PRIMARY,
-        ).place(x=30, y=500)
+        ).place(x=311, y=450)
 
         self.roles = ctk.StringVar(value="Patient")
 
@@ -160,18 +160,19 @@ class SignUpPage(ctk.CTkFrame):
             ],
             variable=self.roles,
             font=("Roboto", 18),
-            fg_color="#EEEFF0",
+            fg_color="#E2E8F0",
             text_color=TEXT_SECONDARY,
             button_color=PRIMARY,
             button_hover_color=SECONDARY,
-            dropdown_text_color=TEXT_PRIMARY,
+            dropdown_fg_color="#FFFFFF",
+            dropdown_text_color="#0F172A",
+            dropdown_hover_color="#E2E8F0",
             dropdown_font=("Roboto", 18),
             corner_radius=9,
-            dynamic_resizing=False,
-            width=540,
-            height=55,
+            width=260,
+            height=50,
         )
-        self.role_option.place(x=30, y=535)
+        self.role_option.place(x=310, y=485)
 
         # PASSWORD
         ctk.CTkLabel(
@@ -179,7 +180,7 @@ class SignUpPage(ctk.CTkFrame):
             text="Password",
             font=("Roboto", 18),
             text_color=TEXT_PRIMARY,
-        ).place(x=30, y=600)
+        ).place(x=30, y=550)
 
         # PASSWORD ENTRY
         self.password_entry = ctk.CTkEntry(
@@ -188,19 +189,19 @@ class SignUpPage(ctk.CTkFrame):
             height=50,
             corner_radius=9,
             font=("Roboto", 18),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
-            border_width=2,
+            fg_color="#E2E8F0",
+            text_color=TEXT_SECONDARY,
+            border_width=0,
         )
-        self.password_entry.place(x=30, y=635)
+        self.password_entry.place(x=30, y=585)
 
         # PASSWORD REQUIREMENT
         ctk.CTkLabel(
             self.container,
-            text="Must be at least 8 characters long.",
+            text="Must be at least 8 characters long",
             font=("Roboto", 16.5),
             text_color=TEXT_SECONDARY,
-        ).place(x=35, y=690)
+        ).place(x=35, y=640)
 
         # CONFIRM PASSWORD
         ctk.CTkLabel(
@@ -208,7 +209,7 @@ class SignUpPage(ctk.CTkFrame):
             text="Confirm Password",
             font=("Roboto", 18),
             text_color=TEXT_PRIMARY,
-        ).place(x=311, y=600)
+        ).place(x=311, y=550)
 
         # CONFIRM PASSWORD ENTRY
         self.confirm_password_entry = ctk.CTkEntry(
@@ -217,11 +218,11 @@ class SignUpPage(ctk.CTkFrame):
             height=55,
             corner_radius=9,
             font=("Roboto", 18),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
-            border_width=2,
+            fg_color="#E2E8F0",
+            text_color=TEXT_SECONDARY,
+            border_width=0,
         )
-        self.confirm_password_entry.place(x=310, y=635)
+        self.confirm_password_entry.place(x=310, y=585)
 
         self.signup_btn = ctk.CTkButton(
             self.container,
@@ -237,7 +238,7 @@ class SignUpPage(ctk.CTkFrame):
             border_color="#E5E7EB",
             command=self.sign_up,
         )
-        self.signup_btn.place(x=30, y=750)
+        self.signup_btn.place(x=30, y=710)
 
         # TO SIGN UP
         ctk.CTkLabel(
@@ -245,7 +246,7 @@ class SignUpPage(ctk.CTkFrame):
             text="Don't have an account?",
             text_color=TEXT_SECONDARY,
             font=("Roboto", 18),
-        ).place(x=265, y=820, anchor=ctk.N)
+        ).place(x=265, y=790, anchor=ctk.N)
 
         ctk.CTkButton(
             self.container,
@@ -257,7 +258,7 @@ class SignUpPage(ctk.CTkFrame):
             font=("Roboto", 18, "underline"),
             cursor="hand2",
             command=lambda: self.controller.change_window("SignInPage"),
-        ).place(x=395, y=819, anchor=ctk.N)
+        ).place(x=395, y=789, anchor=ctk.N)
 
         # TERMS AND CONDITIONS
         self.terms_label = ctk.CTkLabel(
@@ -268,7 +269,7 @@ class SignUpPage(ctk.CTkFrame):
             font=("Roboto", 18),
             cursor="hand2",
         )
-        self.terms_label.place(x=50, y=860)
+        self.terms_label.place(x=50, y=830)
         self.terms_label.bind("<Button-1>")
 
     def show_terms_and_condtion(self, event=None):
@@ -278,8 +279,8 @@ class SignUpPage(ctk.CTkFrame):
         name = self.name_entry.get().strip()
         email = self.email_entry.get().strip()
         phone_number = self.phone_number_entry.get().strip()
-        role = self.role_option.get()
-        valid_roles = ["Patient", "Personnel", "Admin"]
+        role = self.role_option.get().lower()
+        valid_roles = ["patient", "personnel", "admin"]
         password = self.password_entry.get()
         confirm_password = self.confirm_password_entry.get()
 
@@ -313,18 +314,31 @@ class SignUpPage(ctk.CTkFrame):
         if error:
             # mb.showerror("Register", error)
             mb(
+                self,
                 title="Error",
                 message=error,
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             return
 
         user = User(
             name=self.name_entry.get().strip(),
             email=self.email_entry.get().strip(),
             phone_number=self.phone_number_entry.get().strip(),
-            role=self.role_option.get(),
+            role=self.role_option.get().lower(),
             password=self.password_entry.get(),
         )
 
@@ -341,11 +355,24 @@ class SignUpPage(ctk.CTkFrame):
             #     f"Please wait {minutes} minute(s) before trying again.",
             # )
             mb(
+                self,
                 title="Too Many Attempts",
                 message=f"Please wait {minutes} minute(s) before trying again.",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             return
 
         if user_id == "USER_EXISTS":
@@ -355,7 +382,19 @@ class SignUpPage(ctk.CTkFrame):
                 message="Email or phone number already exists",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
         elif user_id:
             # mb.showinfo("Register", "Account created. Verify your OTP.")
             mb(
@@ -363,7 +402,19 @@ class SignUpPage(ctk.CTkFrame):
                 message="Account created. Verify your OTP.",
                 options=("Thanks",),
                 icon="check",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
             self.controller.current_user = user_id
             self.controller.change_window("VerifyOTPPage")
         else:
@@ -373,7 +424,19 @@ class SignUpPage(ctk.CTkFrame):
                 message="Registration failed",
                 options=("Okay",),
                 icon="cancel",
-            ).show()
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
     def toggle_password(self):
         if self.password_visible:
@@ -418,7 +481,7 @@ class SignUpPage(ctk.CTkFrame):
     # def select_role(self, idx, selected_card):
     #     self.selected_role.set(str(idx))
     #     for card in self.cards:
-    #         card.configure(fg_color="#F8FAFC", border_color="#E2E8F0")
+    #         card.configure(fg_color="#E2E8F0", border_color="#E2E8F0")
     #     selected_card.configure(fg_color="#EFF6FF", border_color=PRIMARY)
 
     #     # # TERMS AND CONDITIONS

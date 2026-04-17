@@ -123,7 +123,7 @@ class ResultsPage(ctk.CTkFrame):
             image=self.recommendation_icon,
             width=50,
             height=50,
-            fg_color=GREEN,
+            fg_color=YELLOW,
         ).place(x=20, y=20)
 
         ctk.CTkLabel(
@@ -224,7 +224,7 @@ class ResultsPage(ctk.CTkFrame):
             font=("Inter", 20, "bold"),
             image=self.plus_icon,
             compound="left",
-            command=lambda: self.controller.change_window("StartTestPage"),
+            command=lambda: self.handle_test_again(),
         ).place(x=23, y=100)
 
     def build_receipt_filename(self, patient_id, question_id):
@@ -571,8 +571,11 @@ class ResultsPage(ctk.CTkFrame):
             text=recommendation if recommendation else "No recommendation available."
         )
 
-    def on_show(self):
+    def handle_test_again(self):
+        self.controller.current_question_id = None
+        self.controller.change_window("StartTestPage")
 
+    def on_show(self):
         self.load_results()
         self.generate_receipt()
         self.reciept_preview()
