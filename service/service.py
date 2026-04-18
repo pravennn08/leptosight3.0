@@ -1292,254 +1292,533 @@ class DatabaseService:
             print("Save PDF Path Error:", e)
             return False
 
-    # FETCH TOTAL USER, DIAGNOSTICS, SEVERE RISK CASES, LAST ACTIVITY(USED UPDATED AT FROM USERS TABLE )
-    def fetch_admin_stats(self):
-        try:
-            with self.conn.cursor() as cur:
+    # # FETCH TOTAL USER, DIAGNOSTICS, SEVERE RISK CASES, LAST ACTIVITY(USED UPDATED AT FROM USERS TABLE )
+    # def fetch_admin_stats(self):
+    #     try:
+    #         with self.conn.cursor() as cur:
 
-                # 🔥 MAIN QUERY
-                query = f"""
-                SELECT
-                    (SELECT COUNT(*) FROM {self.user_table}) AS total_users,
+    #             # 🔥 MAIN QUERY
+    #             query = f"""
+    #             SELECT
+    #                 (SELECT COUNT(*) FROM {self.user_table}) AS total_users,
 
-                    (SELECT COUNT(*) FROM {self.diagnostic_table}) AS total_test,
+    #                 (SELECT COUNT(*) FROM {self.diagnostic_table}) AS total_test,
 
-                    (SELECT COUNT(*) 
-                    FROM {self.diagnostic_table} 
-                    WHERE LOWER(risk_level) = 'severe') AS severe_cases,
+    #                 (SELECT COUNT(*)
+    #                 FROM {self.diagnostic_table}
+    #                 WHERE LOWER(risk_level) = 'severe') AS severe_cases,
 
-                    (SELECT MAX(updated_at) FROM {self.user_table}) AS last_activity
-                """
+    #                 (SELECT MAX(updated_at) FROM {self.user_table}) AS last_activity
+    #             """
 
-                cur.execute(query)
-                result = cur.fetchone()
+    #             cur.execute(query)
+    #             result = cur.fetchone()
 
-            if not result:
-                return None
+    #         if not result:
+    #             return None
 
-            total_users, total_test, severe_cases, last_activity = result
+    #         total_users, total_test, severe_cases, last_activity = result
 
-            def time_ago(dt):
-                if not dt:
-                    return "No activity"
+    #         def time_ago(dt):
+    #             if not dt:
+    #                 return "No activity"
 
-                now = datetime.now(dt.tzinfo)
-                diff = now - dt
+    #             now = datetime.now(dt.tzinfo)
+    #             diff = now - dt
 
-                seconds = int(diff.total_seconds())
+    #             seconds = int(diff.total_seconds())
 
-                if seconds < 60:
-                    return "Just now"
-                elif seconds < 3600:
-                    mins = seconds // 60
-                    return f"{mins} minute{'s' if mins > 1 else ''} ago"
-                elif seconds < 86400:
-                    hours = seconds // 3600
-                    return f"{hours} hour{'s' if hours > 1 else ''} ago"
-                else:
-                    days = seconds // 86400
-                    return f"{days} day{'s' if days > 1 else ''} ago"
+    #             if seconds < 60:
+    #                 return "Just now"
+    #             elif seconds < 3600:
+    #                 mins = seconds // 60
+    #                 return f"{mins} minute{'s' if mins > 1 else ''} ago"
+    #             elif seconds < 86400:
+    #                 hours = seconds // 3600
+    #                 return f"{hours} hour{'s' if hours > 1 else ''} ago"
+    #             else:
+    #                 days = seconds // 86400
+    #                 return f"{days} day{'s' if days > 1 else ''} ago"
 
-            return {
-                "total_users": total_users or 0,
-                "total_test": total_test or 0,
-                "severe_cases": severe_cases or 0,
-                "last_activity": time_ago(last_activity),
-            }
+    #         return {
+    #             "total_users": total_users or 0,
+    #             "total_test": total_test or 0,
+    #             "severe_cases": severe_cases or 0,
+    #             "last_activity": time_ago(last_activity),
+    #         }
 
-        except Exception as error:
-            print("FETCH ADMIN STATS ERROR:", error)
-            return None
+    #     except Exception as error:
+    #         print("FETCH ADMIN STATS ERROR:", error)
+    #         return None
 
-    # FETCH NEW USERS WEEKLY
-    def fetch_weekly_users(self):
-        try:
-            with self.conn.cursor() as cur:
+    # # FETCH NEW USERS WEEKLY
+    # def fetch_weekly_users(self):
+    #     try:
+    #         with self.conn.cursor() as cur:
 
-                query = f"""
-                SELECT 
-                    EXTRACT(DOW FROM created_at) AS dow,
-                    COUNT(*) AS total
-                FROM {self.user_table}
-                WHERE created_at >= NOW() - INTERVAL '7 days'
-                GROUP BY dow
-                ORDER BY dow
-                """
+    #             query = f"""
+    #             SELECT
+    #                 EXTRACT(DOW FROM created_at) AS dow,
+    #                 COUNT(*) AS total
+    #             FROM {self.user_table}
+    #             WHERE created_at >= NOW() - INTERVAL '7 days'
+    #             GROUP BY dow
+    #             ORDER BY dow
+    #             """
 
-                cur.execute(query)
-                rows = cur.fetchall()
+    #             cur.execute(query)
+    #             rows = cur.fetchall()
 
-            # =========================
-            # MAP DOW → DAY NAME
-            # PostgreSQL: 0=Sunday ... 6=Saturday
-            # =========================
-            dow_map = {
-                0: "Sun",
-                1: "Mon",
-                2: "Tue",
-                3: "Wed",
-                4: "Thu",
-                5: "Fri",
-                6: "Sat",
-            }
+    #         # =========================
+    #         # MAP DOW → DAY NAME
+    #         # PostgreSQL: 0=Sunday ... 6=Saturday
+    #         # =========================
+    #         dow_map = {
+    #             0: "Sun",
+    #             1: "Mon",
+    #             2: "Tue",
+    #             3: "Wed",
+    #             4: "Thu",
+    #             5: "Fri",
+    #             6: "Sat",
+    #         }
 
-            # Initialize all days = 0
-            weekly_data = {
-                "Mon": 0,
-                "Tue": 0,
-                "Wed": 0,
-                "Thu": 0,
-                "Fri": 0,
-                "Sat": 0,
-                "Sun": 0,
-            }
+    #         # Initialize all days = 0
+    #         weekly_data = {
+    #             "Mon": 0,
+    #             "Tue": 0,
+    #             "Wed": 0,
+    #             "Thu": 0,
+    #             "Fri": 0,
+    #             "Sat": 0,
+    #             "Sun": 0,
+    #         }
 
-            # Fill from DB
-            for dow, count in rows:
-                day_name = dow_map[int(dow)]
-                weekly_data[day_name] = count
+    #         # Fill from DB
+    #         for dow, count in rows:
+    #             day_name = dow_map[int(dow)]
+    #             weekly_data[day_name] = count
 
-            # ✅ ORDER (Mon → Sun)
-            ordered = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    #         # ✅ ORDER (Mon → Sun)
+    #         ordered = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-            return [{"day": day, "users": weekly_data[day]} for day in ordered]
+    #         return [{"day": day, "users": weekly_data[day]} for day in ordered]
 
-        except Exception as error:
-            print("FETCH WEEKLY USERS ERROR:", error)
-            return None
+    #     except Exception as error:
+    #         print("FETCH WEEKLY USERS ERROR:", error)
+    #         return None
 
-    # FETCH RISK LEVEL IN DIAGNOSIS TABLE
-    def fetch_risk_level(self):
-        try:
-            with self.conn.cursor() as cur:
+    # # FETCH RISK LEVEL IN DIAGNOSIS TABLE
+    # def fetch_risk_level(self):
+    #     try:
+    #         with self.conn.cursor() as cur:
 
-                query = f"""
-                SELECT LOWER(risk_level) AS level, COUNT(*) AS total
-                FROM {self.diagnostic_table}
-                GROUP BY LOWER(risk_level)
-                """
+    #             query = f"""
+    #             SELECT LOWER(risk_level) AS level, COUNT(*) AS total
+    #             FROM {self.diagnostic_table}
+    #             GROUP BY LOWER(risk_level)
+    #             """
 
-                cur.execute(query)
-                rows = cur.fetchall()
+    #             cur.execute(query)
+    #             rows = cur.fetchall()
 
-            # =========================
-            # DEFAULT VALUES (IMPORTANT)
-            # =========================
-            risk_map = {
-                "safe": 0,
-                "mild": 0,
-                "moderate": 0,
-                "severe": 0,
-            }
+    #         # =========================
+    #         # DEFAULT VALUES (IMPORTANT)
+    #         # =========================
+    #         risk_map = {
+    #             "safe": 0,
+    #             "mild": 0,
+    #             "moderate": 0,
+    #             "severe": 0,
+    #         }
 
-            # Fill from DB
-            for level, count in rows:
-                if level in risk_map:
-                    risk_map[level] = count
+    #         # Fill from DB
+    #         for level, count in rows:
+    #             if level in risk_map:
+    #                 risk_map[level] = count
 
-            # =========================
-            # FORMAT FOR CHART
-            # =========================
-            return [
-                {"classification": "Safe", "value": risk_map["safe"]},
-                {"classification": "Mild", "value": risk_map["mild"]},
-                {"classification": "Moderate", "value": risk_map["moderate"]},
-                {"classification": "Severe", "value": risk_map["severe"]},
-            ]
+    #         # =========================
+    #         # FORMAT FOR CHART
+    #         # =========================
+    #         return [
+    #             {"classification": "Safe", "value": risk_map["safe"]},
+    #             {"classification": "Mild", "value": risk_map["mild"]},
+    #             {"classification": "Moderate", "value": risk_map["moderate"]},
+    #             {"classification": "Severe", "value": risk_map["severe"]},
+    #         ]
 
-        except Exception as error:
-            print("FETCH RISK LEVEL ERROR:", error)
-            return None
+    #     except Exception as error:
+    #         print("FETCH RISK LEVEL ERROR:", error)
+    #         return None
 
-    def fetch_all_users(self):
-        try:
-            with self.conn.cursor() as cur:
+    # def fetch_all_users(self):
+    #     try:
+    #         with self.conn.cursor() as cur:
 
-                query = f"""
-                SELECT 
-                    id,
-                    name,
-                    email,
-                    phone_number,
-                    password,
-                    role,
-                    is_verified,
-                    last_login_at,
-                    created_at,
-                    updated_at
-                FROM {self.user_table}
-                ORDER BY created_at DESC
-                """
+    #             query = f"""
+    #             SELECT
+    #                 id,
+    #                 name,
+    #                 email,
+    #                 phone_number,
+    #                 password,
+    #                 role,
+    #                 is_verified,
+    #                 last_login_at,
+    #                 created_at,
+    #                 updated_at
+    #             FROM {self.user_table}
+    #             ORDER BY created_at DESC
+    #             """
 
-                cur.execute(query)
-                rows = cur.fetchall()
+    #             cur.execute(query)
+    #             rows = cur.fetchall()
 
-            if not rows:
-                return []
+    #         if not rows:
+    #             return []
 
-            results = []
+    #         results = []
 
-            for row in rows:
-                (
-                    user_id,
-                    name,
-                    email,
-                    phone,
-                    password,
-                    role,
-                    is_verified,
-                    last_login,
-                    created_at,
-                    updated_at,
-                ) = row
+    #         for row in rows:
+    #             (
+    #                 user_id,
+    #                 name,
+    #                 email,
+    #                 phone,
+    #                 password,
+    #                 role,
+    #                 is_verified,
+    #                 last_login,
+    #                 created_at,
+    #                 updated_at,
+    #             ) = row
 
-                # =========================
-                # DISPLAY (TABLE SAFE)
-                # =========================
-                role_text = role.capitalize() if role else "N/A"
-                status = "Verified" if is_verified else "Pending"
+    #             # =========================
+    #             # DISPLAY (TABLE SAFE)
+    #             # =========================
+    #             role_text = role.capitalize() if role else "N/A"
+    #             status = "Verified" if is_verified else "Pending"
 
-                display = (
-                    f"{user_id}",  # formatted ID
-                    email,
-                    phone,
-                    role_text,
-                    status,
-                    "View",
-                )
+    #             display = (
+    #                 user_id,
+    #                 email,
+    #                 phone,
+    #                 role_text,
+    #                 status,
+    #                 "View",
+    #             )
 
-                # =========================
-                # FULL (FOR MODAL)
-                # =========================
-                full = {
-                    "id": user_id,
-                    "name": name,
-                    "email": email,
-                    "phone_number": phone,
-                    "password": password,
-                    "role": role,
-                    "is_verified": is_verified,
-                    "last_login_at": last_login,
-                    "created_at": created_at,
-                    "updated_at": updated_at,
-                }
+    #             # =========================
+    #             # FULL (FOR MODAL)
+    #             # =========================
+    #             full = {
+    #                 "id": user_id,
+    #                 "name": name,
+    #                 "email": email,
+    #                 "phone_number": phone,
+    #                 "password": password,
+    #                 "role": role,
+    #                 "is_verified": is_verified,
+    #                 "last_login_at": last_login,
+    #                 "created_at": created_at,
+    #                 "updated_at": updated_at,
+    #             }
 
-                results.append(
-                    {
-                        "id": user_id,
-                        "display": display,
-                        "full": full,
-                    }
-                )
+    #             results.append(
+    #                 {
+    #                     "id": user_id,
+    #                     "display": display,
+    #                     "full": full,
+    #                 }
+    #             )
 
-            return results
+    #         return results
 
-        except Exception as error:
-            print("FETCH USERS ERROR:", error)
-            return None
+    #     except Exception as error:
+    #         print("FETCH USERS ERROR:", error)
+    #         return None
 
-    def updated_selected_user(self):
-        pass
+    # def search_user(self, keyword):
+    #     try:
+    #         with self.conn.cursor() as cur:
+
+    #             query = f"""
+    #             SELECT
+    #                 id,
+    #                 name,
+    #                 email,
+    #                 phone_number,
+    #                 password,
+    #                 role,
+    #                 is_verified,
+    #                 last_login_at,
+    #                 created_at,
+    #                 updated_at
+    #             FROM {self.user_table}
+    #             WHERE
+    #                 id::text ILIKE %s OR
+    #                 name ILIKE %s OR
+    #                 email ILIKE %s OR
+    #                 phone_number ILIKE %s OR
+    #                 role::text ILIKE %s
+    #             ORDER BY created_at DESC
+    #             """
+
+    #             like_keyword = f"%{keyword}%"
+
+    #             cur.execute(
+    #                 query,
+    #                 (
+    #                     like_keyword,
+    #                     like_keyword,
+    #                     like_keyword,
+    #                     like_keyword,
+    #                     like_keyword,
+    #                 ),
+    #             )
+
+    #             rows = cur.fetchall()
+
+    #         if not rows:
+    #             return []
+
+    #         results = []
+
+    #         for row in rows:
+    #             (
+    #                 user_id,
+    #                 name,
+    #                 email,
+    #                 phone,
+    #                 password,
+    #                 role,
+    #                 is_verified,
+    #                 last_login,
+    #                 created_at,
+    #                 updated_at,
+    #             ) = row
+
+    #             role_text = role.capitalize() if role else "N/A"
+
+    #             # ✅ FIXED STATUS
+    #             status = "Verified" if bool(is_verified) else "Pending"
+
+    #             display = (
+    #                 user_id,  # ✅ no formatting
+    #                 email,
+    #                 phone,
+    #                 role_text,
+    #                 status,
+    #                 "View",
+    #             )
+
+    #             full = {
+    #                 "id": user_id,
+    #                 "name": name,
+    #                 "email": email,
+    #                 "phone_number": phone,
+    #                 "password": password,
+    #                 "role": role,
+    #                 "is_verified": is_verified,
+    #                 "last_login_at": last_login,
+    #                 "created_at": created_at,
+    #                 "updated_at": updated_at,
+    #             }
+
+    #             results.append(
+    #                 {
+    #                     "id": user_id,
+    #                     "display": display,
+    #                     "full": full,
+    #                 }
+    #             )
+
+    #         return results
+
+    #     except Exception as error:
+    #         self.conn.rollback()
+    #         print("SEARCH USER ERROR:", error)
+    #         return None
+
+    # def filter_user_role(self):
+    #     pass
+
+    # def filter_user_status(self):
+    #     pass
+
+    # def update_user(
+    #     self,
+    #     user_id,
+    #     name,
+    #     email,
+    #     phone_number,
+    #     role,
+    #     is_verified,
+    # ):
+    #     try:
+    #         with self.conn.cursor() as cur:
+
+    #             # =========================
+    #             # 🔥 DUPLICATE CHECK
+    #             # =========================
+    #             check_query = f"""
+    #             SELECT email, phone_number
+    #             FROM {self.user_table}
+    #             WHERE (email = %s OR phone_number = %s)
+    #             AND id != %s
+    #             """
+
+    #             cur.execute(check_query, (email, phone_number, user_id))
+    #             existing = cur.fetchone()
+
+    #             if existing:
+    #                 existing_email, existing_phone = existing
+
+    #                 if existing_email == email:
+    #                     return "EMAIL_EXISTS"
+
+    #                 if existing_phone == phone_number:
+    #                     return "PHONE_EXISTS"
+
+    #                 return "DUPLICATE"
+
+    #             # =========================
+    #             # ✅ UPDATE USER
+    #             # =========================
+    #             update_query = f"""
+    #             UPDATE {self.user_table}
+    #             SET
+    #                 name = %s,
+    #                 email = %s,
+    #                 phone_number = %s,
+    #                 role = %s,
+    #                 is_verified = %s,
+    #                 updated_at = NOW()
+    #             WHERE id = %s
+    #             RETURNING id
+    #             """
+
+    #             cur.execute(
+    #                 update_query,
+    #                 (
+    #                     name,
+    #                     email,
+    #                     phone_number,
+    #                     role,
+    #                     is_verified,
+    #                     user_id,
+    #                 ),
+    #             )
+
+    #             updated = cur.fetchone()
+
+    #         self.conn.commit()
+
+    #         if not updated:
+    #             return "USER_NOT_FOUND"
+
+    #         return "USER_UPDATED"
+
+    #     except Exception as error:
+    #         print("UPDATE USER ERROR:", error)
+    #         return "ERROR"
+
+    # def add_account(self, data):
+    #     try:
+    #         with self.conn.cursor() as cur:
+
+    #             # =========================
+    #             # 🔥 DUPLICATE CHECK
+    #             # =========================
+    #             check_query = f"""
+    #             SELECT email, phone_number
+    #             FROM {self.user_table}
+    #             WHERE email = %s OR phone_number = %s
+    #             """
+
+    #             cur.execute(check_query, (data.email, data.phone_number))
+    #             existing = cur.fetchone()
+
+    #             if existing:
+    #                 existing_email, existing_phone = existing
+
+    #                 if existing_email == data.email:
+    #                     return "EMAIL_EXISTS"
+
+    #                 if existing_phone == data.phone_number:
+    #                     return "PHONE_EXISTS"
+
+    #                 return "DUPLICATE"
+
+    #             # =========================
+    #             # 🔐 HASH PASSWORD
+    #             # =========================
+    #             hashed = bcrypt.hashpw(
+    #                 data.password.encode(), bcrypt.gensalt()
+    #             ).decode()
+
+    #             # =========================
+    #             # OPTIONAL OTP (can be None)
+    #             # =========================
+    #             otp_code = None
+    #             otp_expiry = None
+
+    #             # =========================
+    #             # INSERT USER
+    #             # =========================
+    #             query = f"""
+    #             INSERT INTO {self.user_table}
+    #             (name, email, phone_number, password, role, is_verified, created_at, updated_at)
+    #             VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())
+    #             RETURNING id
+    #             """
+
+    #             cur.execute(
+    #                 query,
+    #                 (
+    #                     data.name,
+    #                     data.email,
+    #                     data.phone_number,
+    #                     hashed,
+    #                     data.role,
+    #                     data.is_verified,
+    #                 ),
+    #             )
+
+    #             user = cur.fetchone()
+
+    #         self.conn.commit()
+
+    #         return user if user else "ERROR"
+
+    #     except Exception as error:
+    #         print("ADD USER ERROR:", error)
+    #         return "ERROR"
+
+    # def delete_user(self, id):
+    #     try:
+    #         with self.conn.cursor() as cur:
+
+    #             # ✅ check if exists
+    #             cur.execute(
+    #                 f"SELECT id FROM {self.user_table} WHERE id = %s",
+    #                 (id,),
+    #             )
+    #             if not cur.fetchone():
+    #                 return "USER_NOT_FOUND"
+
+    #             # ✅ delete
+    #             cur.execute(
+    #                 f"DELETE FROM {self.user_table} WHERE id = %s",
+    #                 (id,),
+    #             )
+
+    #         self.conn.commit()
+    #         return "USER_DELETED"
+
+    #     except Exception as error:
+    #         print("DELETE USER ERROR:", error)
+    #         return "ERROR"
 
     def close(self):
         self.cursor.close()

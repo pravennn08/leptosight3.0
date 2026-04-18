@@ -38,7 +38,7 @@ class DashboardPage(ctk.CTkFrame):
             fg_color="transparent",
         )
         self.controller = controller
-        self.db = controller.db
+        self.admin_db = controller.admin_db
 
         # ICONS
         self.bell_icon = ctk.CTkImage(Image.open(BELL), size=(30, 30))
@@ -236,7 +236,7 @@ class DashboardPage(ctk.CTkFrame):
         # user_name = user[1]
         # self.welcome_label.configure(text=f"Welcome, {user_name}!")
 
-        stats = self.db.fetch_admin_stats()
+        stats = self.admin_db.fetch_admin_stats()
 
         if not stats:
             stats = {
@@ -256,7 +256,7 @@ class DashboardPage(ctk.CTkFrame):
 
         self.build_home_cards()
 
-        line_chart_data = self.db.fetch_weekly_users()
+        line_chart_data = self.admin_db.fetch_weekly_users()
 
         if not line_chart_data:
             line_chart_data = [
@@ -271,7 +271,7 @@ class DashboardPage(ctk.CTkFrame):
 
         self.after(500, lambda: self.line_chart.update_chart(line_chart_data))
 
-        bar_chart_data = self.db.fetch_risk_level()
+        bar_chart_data = self.admin_db.fetch_risk_level()
 
         if not bar_chart_data:
             bar_chart_data = [

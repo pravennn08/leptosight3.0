@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import re
 from service.service import DatabaseService
+from service.admin_service import AdminDatabaseService
 from constants.seeds import BACKGROUND
 from .components.sidebar import AppSideBar
 from .components.navbar import AppNavBar
@@ -35,6 +36,7 @@ class App(ctk.CTk):
 
         # DB SERVICE
         self.db = DatabaseService()
+        self.admin_db = AdminDatabaseService()
 
         # AUTH SESSION
         self.current_user = None
@@ -89,7 +91,7 @@ class App(ctk.CTk):
         self.frames["UsersPage"] = UsersPage(self.content, self)
         self.frames["SettingsPage"] = SettingsPage(self.content, self)
 
-        self.change_window("UsersPage")
+        self.change_window("PatientRecordsPage")
 
     # CHANGE WINDOW
     def change_window(self, name):

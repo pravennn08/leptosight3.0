@@ -28,7 +28,6 @@ from ..components.messagebox import MessageBox as mb
 from ..components.data_table import DataTable
 from ..components.rectangle import Rectangle
 from receipts.thermal_receipt import ThermalPrinter
-from CTkTable import *
 
 
 class RecordsPage(ctk.CTkFrame):

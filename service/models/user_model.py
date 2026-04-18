@@ -42,3 +42,26 @@ class User:
         if phone.startswith("639"):
             return "+" + phone
         return phone
+
+
+# @staticmethod
+# def normalize_phone(phone):
+#     if not phone:
+#         return None
+
+#     phone = str(phone).strip().replace(" ", "")
+
+#     # ✅ Already normalized
+#     if phone.startswith("+639") and phone[1:].isdigit() and len(phone) == 13:
+#         return phone
+
+#     # ✅ 639XXXXXXXXX → +639XXXXXXXXX
+#     if phone.startswith("639") and phone.isdigit() and len(phone) == 12:
+#         return "+" + phone
+
+#     # ✅ 09XXXXXXXXX → +639XXXXXXXXX
+#     if phone.startswith("09") and phone.isdigit() and len(phone) == 11:
+#         return "+63" + phone[1:]
+
+#     # ❌ Invalid format
+#     return None
