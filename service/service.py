@@ -1451,6 +1451,96 @@ class DatabaseService:
             print("FETCH RISK LEVEL ERROR:", error)
             return None
 
+    def fetch_all_users(self):
+        try:
+            with self.conn.cursor() as cur:
+
+                query = f"""
+                SELECT 
+                    id,
+                    name,
+                    email,
+                    phone_number,
+                    password,
+                    role,
+                    is_verified,
+                    last_login_at,
+                    created_at,
+                    updated_at
+                FROM {self.user_table}
+                ORDER BY created_at DESC
+                """
+
+                cur.execute(query)
+                rows = cur.fetchall()
+
+            if not rows:
+                return []
+
+            results = []
+
+            for row in rows:
+                (
+                    user_id,
+                    name,
+                    email,
+                    phone,
+                    password,
+                    role,
+                    is_verified,
+                    last_login,
+                    created_at,
+                    updated_at,
+                ) = row
+
+                # =========================
+                # DISPLAY (TABLE SAFE)
+                # =========================
+                role_text = role.capitalize() if role else "N/A"
+                status = "Verified" if is_verified else "Pending"
+
+                display = (
+                    f"{user_id}",  # formatted ID
+                    email,
+                    phone,
+                    role_text,
+                    status,
+                    "View",
+                )
+
+                # =========================
+                # FULL (FOR MODAL)
+                # =========================
+                full = {
+                    "id": user_id,
+                    "name": name,
+                    "email": email,
+                    "phone_number": phone,
+                    "password": password,
+                    "role": role,
+                    "is_verified": is_verified,
+                    "last_login_at": last_login,
+                    "created_at": created_at,
+                    "updated_at": updated_at,
+                }
+
+                results.append(
+                    {
+                        "id": user_id,
+                        "display": display,
+                        "full": full,
+                    }
+                )
+
+            return results
+
+        except Exception as error:
+            print("FETCH USERS ERROR:", error)
+            return None
+
+    def updated_selected_user(self):
+        pass
+
     def close(self):
         self.cursor.close()
         self.conn.close()
