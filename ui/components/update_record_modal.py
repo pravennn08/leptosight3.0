@@ -470,7 +470,7 @@ class UpdateRecordModal(ctk.CTkToplevel):
             hover_color="#0D9488",
             text_color="#FFFFFF",
             font=("Inter", 18, "bold"),
-            # command=self.update_record,
+            command=self.update_record,
             corner_radius=9,
         )
         self.update_button.place(x=1250, y=740)
@@ -564,8 +564,117 @@ class UpdateRecordModal(ctk.CTkToplevel):
         )
         self.recommendation_text_box.configure(state="disabled")
 
+    def validate(self):
+        temp_raw = self.temperature_entry.get().strip()
+
+        if not temp_raw:
+            return "Temperature is required"
+        try:
+            temp = float(temp_raw)
+        except ValueError:
+            return "Temperature must be a valid number (e.g., 36.5)"
+
+        if temp < 30 or temp > 45:
+            return "Temperature must be between 30°C and 45°C"
+
+        test_class = self.test_class_menu.get()
+        eye_class = self.eye_class_menu.get()
+        risk_level = self.risk_level_menu.get()
+
+        if test_class == "Select":
+            return "Select test classification"
+
+        if eye_class == "Select":
+            return "Select eye classification"
+
+        if risk_level == "Select":
+            return "Select risk level"
+
+        return None
+
     def update_record(self):
-        pass
+        error = self.validate()
+        if error:
+            mb(
+                self.controller,
+                title="Error",
+                message=error,
+                option_1="Okay",
+                icon="cancel",
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
+            return
+
+        temp = self.temperature_entry.get()
+        test_class = self.test_class_menu.get()
+        eye_class = self.eye_class_menu.get()
+        risk_level = self.risk_level_menu.get()
+
+        record_id = self.row["id"]
+
+        success = self.controller.admin_db.update_record(
+            record_id,
+            temp,
+            test_class,
+            eye_class,
+            risk_level,
+        )
+
+        if success:
+
+            mb(
+                self.controller,
+                title="Update Record",
+                message="Record updated successfully",
+                option_1="Thanks",
+                icon="check",
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
+            self.controller.frames["PatientRecordsPage"].on_show()
+            self.destroy()
+
+        else:
+            mb(
+                self.controller,
+                title="Error",
+                message="Update record failed",
+                option_1="Okay",
+                icon="cancel",
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color="#14B8A6",
+                button_hover_color="#0D9488",
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
     def print_record(self):
         data = self.row

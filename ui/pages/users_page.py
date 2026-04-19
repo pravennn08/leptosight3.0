@@ -311,7 +311,7 @@ class UsersPage(ctk.CTkFrame):
 
         confirm = mb(
             self,
-            title="Confirm Delete",
+            title="Delete User",
             message="Are you sure you want to delete this user?",
             icon="warning",
             option_1="Delete",

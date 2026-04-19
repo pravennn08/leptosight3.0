@@ -302,8 +302,59 @@ class PatientRecordsPage(ctk.CTkFrame):
         self.top.geometry(f"1450x880+{x}+{y}")
 
     def delete_record(self, index):
-        record = self.patient_records[index]
-        print(record["full"])
+        record = self.patient_records[index]["full"]
+
+        diagnostic_id = record["id"]
+        confirm = mb(
+            self.controller,
+            title="Delete Record",
+            message="Are you sure you want to delete this record?",
+            icon="warning",
+            option_1="Delete",
+            option_2="Cancel",
+            fg_color="#FFFFFF",
+            border_width=1,
+            border_color="#E2E8F0",
+            text_color="#0F172A",
+            title_color="#0F172A",
+            font=("Inter", 16),
+            height=260,
+            button_color=RED,
+            button_hover_color=RED_HOVER,
+            button_text_color="#FFFFFF",
+            button_width=100,
+            button_height=55,
+        )
+
+        if confirm.get() != "Delete":
+            return
+
+        success = self.admin_db.delete_record(diagnostic_id)
+
+        if success:
+            self.on_show()
+
+        else:
+            mb(
+                self,
+                title="Delete Record",
+                message="Failed to delete record",
+                icon="warning",
+                option_1="Delete",
+                option_2="Cancel",
+                fg_color="#FFFFFF",
+                border_width=1,
+                border_color="#E2E8F0",
+                text_color="#0F172A",
+                title_color="#0F172A",
+                font=("Inter", 16),
+                height=260,
+                button_color=RED,
+                button_hover_color=RED_HOVER,
+                button_text_color="#FFFFFF",
+                button_width=100,
+                button_height=55,
+            )
 
     def on_show(self):
 
@@ -315,6 +366,3 @@ class PatientRecordsPage(ctk.CTkFrame):
             table_data = [("No Results", "-", "-", "-", "-", "-")]
 
         self.table.update_data(table_data)
-
-
-# how can i reuse this print record in patient side: def print_record(self, index): record = self.full_records[index]["full"] diagnostic_id = record["id"] data = self.controller.db.print_patient_results_table(diagnostic_id) if not data: print("No data to print") return printer = ThermalPrinter( device="/dev/usb/lp0", created_at=data.get("created_at") ) printer.print_report( patient_id=data.get("patient_id", "N/A"), patient_name=data.get("patient_name", "N/A"), temperature=data.get("temperature", 0), contact_number=data.get("contact_number", "N/A"), test_result=data.get("test_result", "N/A"), test_conf=data.get("test_conf", 0), eye_classification=data.get("eye_classification", "N/A"), eye_conf=data.get("eye_conf", 0), risk_level=data.get("risk_level", "N/A"), recommendation=data.get("recommendation") or "No recommendation available", ) printer.close() print_record in patiebnt records: def print_record(self, index): record = self.patient_records[index] print(record["full"])

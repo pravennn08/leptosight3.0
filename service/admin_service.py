@@ -840,6 +840,59 @@ class AdminDatabaseService:
             print("FILTER RECORDS ERROR:", error)
             return None
 
+    def update_record(self, record_id, temp, test_class, eye_class, risk_level):
+        try:
+            with self.conn.cursor() as cur:
+
+                query = f"""
+                UPDATE {self.diagnostic_table}
+                SET 
+                    temp = %s,
+                    test_classification = %s,
+                    eye_classification = %s,
+                    risk_level = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """
+
+                cur.execute(
+                    query,
+                    (
+                        temp,
+                        test_class,
+                        eye_class,
+                        risk_level,
+                        record_id,
+                    ),
+                )
+
+            self.conn.commit()
+            return True
+
+        except Exception as error:
+            self.conn.rollback()
+            print("UPDATE RECORD ERROR:", error)
+            return False
+
+    def delete_record(self, record_id):
+        try:
+            with self.conn.cursor() as cur:
+
+                query = f"""
+                DELETE FROM {self.diagnostic_table}
+                WHERE id = %s
+                """
+
+                cur.execute(query, (record_id,))
+
+            self.conn.commit()
+            return True
+
+        except Exception as error:
+            self.conn.rollback()
+            print("DELETE RECORD ERROR:", error)
+            return False
+
     def close(self):
         self.cursor.close()
         self.conn.close()
