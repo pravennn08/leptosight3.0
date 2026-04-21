@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 import os
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "eye_model.pt")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "best.pt")
 
 
 class EyeClassificationModel:

@@ -256,15 +256,6 @@ class QuestionsPage(ctk.CTkFrame):
         self.answers[self.curr_page_index] = self.answer_var.get()
         self.next_btn.configure(state=ctk.NORMAL)
 
-    def normalize_answer(self):
-        results = []
-
-        for q_index, choice_index in self.answers.items():
-            seeds = self.questions[q_index]
-            original_choice = seeds["choices"][int(choice_index)]
-            results.append(original_choice)
-        return results
-
     def toggle_translate(self, choice):
         self.is_translated = choice == "Filipino"
 
@@ -274,6 +265,15 @@ class QuestionsPage(ctk.CTkFrame):
             self.question_label.configure(font=("Poppins", 25))
 
         self.question_builder()
+
+    def normalize_answer(self):
+        results = []
+
+        for q_index, choice_index in self.answers.items():
+            seeds = self.questions[q_index]
+            original_choice = seeds["choices"][int(choice_index)]
+            results.append(original_choice)
+        return results
 
     def load_patient_temp(self):
         question_id = self.controller.current_question_id
@@ -368,87 +368,6 @@ class QuestionsPage(ctk.CTkFrame):
             button_width=100,
             button_height=55,
         )
-
-    # NAVIGATION
-    # def change_page(self, button):
-    #     if button == "Next":
-    #         if self.curr_page_index == len(self.questions) - 1:
-    #             answers = self.normalize_answer()
-
-    #             patient_inputs = self.feed_inputs()
-    #             print("MODEL INPUT:", patient_inputs)
-
-    #             # MODEL
-    #             result = self.test_model.predict(patient_inputs)
-    #             print("MODEL RESULT:", result)
-
-    #             question_id = self.controller.current_question_id
-
-    #             test_confidence = result["confidence"]
-    #             test_classification = result["classification"]
-    #             top_patient_factors = result["top_patient_factors"]
-
-    #             success = self.db.save_question_responses(
-    #                 question_id,
-    #                 answers,
-    #                 test_classification,
-    #                 test_confidence,
-    #                 top_patient_factors,
-    #             )
-
-    #             if success:
-    #                 mb(
-    #                     title="Saved Answers",
-    #                     message="Responses saved successfully",
-    #                     options=("Thanks",),
-    #                     icon="check",
-    #                     fg_color="#FFFFFF",
-    #                     border_width=1,
-    #                     border_color="#E2E8F0",
-    #                     text_color="#0F172A",
-    #                     title_color="#0F172A",
-    #                     font=("Inter", 16),
-    #                     height=260,
-    #                     button_color="#14B8A6",
-    #                     button_hover_color="#0D9488",
-    #                     button_text_color="#FFFFFF",
-    #                     button_width=100,
-    #                     button_height=55,
-    #                 )
-
-    #                 self.controller.change_window("EyeScanPage")
-    #             else:
-    #                 mb(
-    #                     title="Error",
-    #                     message="Failed to save responses",
-    #                     options=("Okay",),
-    #                     icon="cancel",
-    #                     fg_color="#FFFFFF",
-    #                     border_width=1,
-    #                     border_color="#E2E8F0",
-    #                     text_color="#0F172A",
-    #                     title_color="#0F172A",
-    #                     font=("Inter", 16),
-    #                     height=260,
-    #                     button_color="#14B8A6",
-    #                     button_hover_color="#0D9488",
-    #                     button_text_color="#FFFFFF",
-    #                     button_width=100,
-    #                     button_height=55,
-    #                 )
-
-    #             return
-
-    #         else:
-    #             self.curr_page_index += 1
-
-    #     elif button == "Prev":
-    #         self.curr_page_index -= 1
-
-    #     self.question_builder()
-    #     self.update_buttons()
-    #     self.update_progressbar()
-    #     self.update_percentage()
 
     # NAVIGATION
     def change_page(self, button):

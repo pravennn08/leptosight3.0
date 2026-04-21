@@ -745,7 +745,7 @@ class DatabaseService:
                 eye_scan_path
             FROM {self.diagnostic_table}
             WHERE patient_id = %s
-            ORDER BY created_at ASC;
+            ORDER BY created_at DESC;
             """
 
             with self.conn.cursor() as cur:
@@ -1014,9 +1014,7 @@ class DatabaseService:
         top_patient_factors,
     ):
         try:
-            factors_json = json.dumps(
-                [{"feature": f, "score": float(s)} for f, s in top_patient_factors]
-            )
+            factors_json = json.dumps(top_patient_factors)
 
             query = f"""
             UPDATE {self.diagnostic_table}

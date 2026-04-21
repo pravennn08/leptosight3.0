@@ -194,14 +194,14 @@ class AppSideBar(ctk.CTkFrame):
                 widget.destroy()
 
     def get_role(self):
-        return "admin"
-        # user = self.controller.current_user
+        # return "admin"
+        user = self.controller.current_user
 
-        # if not user:
-        #     return "patient"
+        if not user:
+            return "patient"
 
-        # print("Printing Role:", user[5])
-        # return user[5]
+        print("Printing Role:", user[5])
+        return user[5]
 
     def build_menu(self):
         self.clear_menu_buttons()

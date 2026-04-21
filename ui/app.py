@@ -91,7 +91,7 @@ class App(ctk.CTk):
         self.frames["UsersPage"] = UsersPage(self.content, self)
         self.frames["SettingsPage"] = SettingsPage(self.content, self)
 
-        self.change_window("PatientRecordsPage")
+        self.change_window("SignInPage")
 
     # CHANGE WINDOW
     def change_window(self, name):

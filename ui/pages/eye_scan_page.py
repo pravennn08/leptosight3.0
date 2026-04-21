@@ -28,9 +28,11 @@ from constants.seeds import (
     PINK,
     VIOLET,
     LOGO,
+    ZOOM_IN,
 )
 from ..components.avatar import Avatar
 from ..components.square import Square
+from ..components.eye_result_modal import EyeResultModal
 from CTkMessagebox import CTkMessagebox as mb
 from models.eye_classification_model import EyeClassificationModel
 
@@ -56,6 +58,10 @@ class EyeScanPage(ctk.CTkFrame):
         self.flash_off = send_relay_off
         self.clean_up = cleanup
 
+        self.zoom_level = 1.0  # 1.0 = no zoom
+        self.max_zoom = 4.0
+        self.zoom_step = 0.5
+
         # IMAGE
         self.camera_prompt_img = ctk.CTkImage(
             Image.open(CAMERA_PROMPT), size=(360, 260)
@@ -65,6 +71,8 @@ class EyeScanPage(ctk.CTkFrame):
         self.camera_icon = ctk.CTkImage(Image.open(CAMERA), size=(70, 70))
         self.flash_icon = ctk.CTkImage(Image.open(FLASH), size=(50, 50))
         self.save_icon = ctk.CTkImage(Image.open(SAVE), size=(50, 50))
+        self.zoom_icon = ctk.CTkImage(Image.open(ZOOM_IN), size=(50, 50))
+
         self.check_icon = ctk.CTkImage(Image.open(CHECK), size=(24, 24))
 
         self.camera_tips_icon = ctk.CTkImage(Image.open(CAMERA), size=(24, 24))
@@ -178,6 +186,18 @@ class EyeScanPage(ctk.CTkFrame):
             text_color=TEXT_SECONDARY,
         ).place(relx=0.65, rely=0.85, anchor=ctk.CENTER)
 
+        self.zoom_eye_btn = ctk.CTkButton(
+            self.actions_container,
+            image=self.zoom_icon,
+            width=100,
+            height=90,
+            text="",
+            fg_color="#14B8A6",
+            corner_radius=10,
+            command=self.zoom_eye,
+        )
+        self.zoom_eye_btn.place(relx=0.77, rely=0.5, anchor=ctk.CENTER)
+
         self.instruction_container = ctk.CTkFrame(
             self,
             height=430,
@@ -231,6 +251,55 @@ class EyeScanPage(ctk.CTkFrame):
         )
         self.preview_label.pack(expand=True)
 
+    # def zoom_eye(self):
+    #     if not hasattr(self, "picam2"):
+    #         return
+
+    #     # Increase zoom
+    #     self.zoom_level += self.zoom_step
+
+    #     if self.zoom_level > self.max_zoom:
+    #         self.zoom_level = 1.0  # reset zoom (toggle behavior)
+
+    #     # Get full sensor size
+    #     sensor_width, sensor_height = self.picam2.camera_properties["PixelArraySize"]
+
+    #     # Compute crop size (smaller = more zoom)
+    #     crop_width = int(sensor_width / self.zoom_level)
+    #     crop_height = int(sensor_height / self.zoom_level)
+
+    #     # Center the crop
+    #     crop_x = (sensor_width - crop_width) // 2
+    #     crop_y = (sensor_height - crop_height) // 2
+
+    #     # Apply zoom (THIS IS THE IMPORTANT PART)
+    #     self.picam2.set_controls(
+    #         {"ScalerCrop": (crop_x, crop_y, crop_width, crop_height)}
+    #     )
+
+    #     print(f"Zoom level: {self.zoom_level}")
+
+    def zoom_eye(self):
+        if not hasattr(self, "picam2"):
+            return
+
+        if self.zoom_level == 1.0:
+            self.zoom_level = 4.0
+        else:
+            self.zoom_level = 1.0
+
+        sensor_width, sensor_height = self.picam2.camera_properties["PixelArraySize"]
+
+        crop_width = int(sensor_width / self.zoom_level)
+        crop_height = int(sensor_height / self.zoom_level)
+
+        crop_x = (sensor_width - crop_width) // 2
+        crop_y = (sensor_height - crop_height) // 2
+
+        self.picam2.set_controls(
+            {"ScalerCrop": (crop_x, crop_y, crop_width, crop_height)}
+        )
+
     def toggle_flash(self):
         self.is_on = not self.is_on
 
@@ -244,6 +313,7 @@ class EyeScanPage(ctk.CTkFrame):
             return
 
         self.picam2 = Picamera2()
+        self.zoom_level = 1.0
 
         config = self.picam2.create_preview_configuration(
             main={"size": (950, 600), "format": "RGB888"}
@@ -255,47 +325,11 @@ class EyeScanPage(ctk.CTkFrame):
         self.camera_running = True
         self.update_camera()
 
-    # def update_camera(self):
-    #     frame = self.picam2.capture_array()
-
-    #     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-    #     self.current_frame = frame.copy()
-
-    #     img = Image.fromarray(frame)
-    #     imgtk = ImageTk.PhotoImage(image=img)
-
-    #     self.camera_label.imgtk = imgtk
-    #     self.camera_label.configure(image=imgtk)
-
-    #     self.after(10, self.update_camera)
-
-    # def update_camera(self):
-    #     if not hasattr(self, "camera_running") or not self.camera_running:
-    #         return
-
-    #     frame = self.picam2.capture_array()
-
-    #     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    #     self.current_frame = frame.copy()
-
-    #     img = Image.fromarray(frame)
-    #     imgtk = ImageTk.PhotoImage(image=img)
-
-    #     self.camera_label.imgtk = imgtk
-    #     self.camera_label.configure(image=imgtk)
-
-    #     self.after(10, self.update_camera)
     def update_camera(self):
         if not hasattr(self, "camera_running") or not self.camera_running:
             return
 
-        try:
-            frame = self.picam2.capture_array()
-        except Exception as e:
-            print("Camera error:", e)
-            self.restart_camera()
-            return
+        frame = self.picam2.capture_array()
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         self.current_frame = frame.copy()
@@ -306,32 +340,17 @@ class EyeScanPage(ctk.CTkFrame):
         self.camera_label.imgtk = imgtk
         self.camera_label.configure(image=imgtk)
 
-        # 🔥 store after ID
-        self.after_id = self.after(10, self.update_camera)
-
-    # def stop_camera(self):
-    #     if hasattr(self, "camera_running") and self.camera_running:
-    #         self.camera_running = False
-
-    #         try:
-    #             self.picam2.stop()
-    #             self.picam2.close()
-    #         except:
-    #             pass
+        self.after(10, self.update_camera)
 
     def stop_camera(self):
         if hasattr(self, "camera_running") and self.camera_running:
             self.camera_running = False
 
-            # 🔥 cancel loop
-            if hasattr(self, "after_id"):
-                self.after_cancel(self.after_id)
-
             try:
                 self.picam2.stop()
                 self.picam2.close()
-            except Exception as e:
-                print("Stop camera error:", e)
+            except:
+                pass
 
     def show_preview(self):
         if self.current_frame is None:
@@ -480,6 +499,7 @@ class EyeScanPage(ctk.CTkFrame):
 
                 self.clean_up()
                 self.result_modal()
+                self.stop_camera()
 
                 # self.controller.change_window("ResultsPage")
             else:
@@ -526,32 +546,54 @@ class EyeScanPage(ctk.CTkFrame):
             )
             return
 
-    def restart_camera(self):
-        print("Restarting camera...")
+    # def compute_risk(self, test_class, test_conf, eye_class, eye_conf):
+    #     RISK_ORDER = {
+    #         "Safe": 0,
+    #         "Mild": 1,
+    #         "Moderate": 2,
+    #         "Severe": 3,
+    #     }
 
-        self.stop_camera()
+    #     # Handle unknowns
+    #     if test_class == "Unknown":
+    #         return eye_class
+    #     if eye_class == "Unknown":
+    #         return test_class
 
-        try:
-            self.picam2 = Picamera2()
-            config = self.picam2.create_preview_configuration(
-                main={"size": (950, 600), "format": "RGB888"}
-            )
-            self.picam2.configure(config)
-            self.picam2.start()
+    #     test_score = RISK_ORDER[test_class]
+    #     eye_score = RISK_ORDER[eye_class]
 
-            self.camera_running = True
-            self.update_camera()
+    #     # 🔥 HARD SAFETY RULE
+    #     if test_score == 3 or eye_score == 3:
+    #         return "Severe"
 
-        except Exception as e:
-            print("Camera restart failed:", e)
+    #     # 🔥 WEIGHTED WITH CONFIDENCE
+    #     weighted_test = test_score * test_conf * 0.65
+    #     weighted_eye = eye_score * eye_conf * 0.35
+
+    #     final_score = weighted_test + weighted_eye
+
+    #     final_index = round(final_score)
+
+    #     # Clamp just in case
+    #     final_index = max(0, min(3, final_index))
+
+    #     for key, value in RISK_ORDER.items():
+    #         if value == final_index:
+    #             return key
 
     def compute_risk(self, test_class, test_conf, eye_class, eye_conf):
+
         RISK_ORDER = {
             "Safe": 0,
             "Mild": 1,
             "Moderate": 2,
             "Severe": 3,
         }
+
+        # Convert confidence to 0–1
+        test_conf = test_conf / 100
+        eye_conf = eye_conf / 100
 
         # Handle unknowns
         if test_class == "Unknown":
@@ -562,24 +604,30 @@ class EyeScanPage(ctk.CTkFrame):
         test_score = RISK_ORDER[test_class]
         eye_score = RISK_ORDER[eye_class]
 
-        # 🔥 HARD SAFETY RULE
+        # 🔥 HARD RULE (VERY GOOD - KEEP THIS)
         if test_score == 3 or eye_score == 3:
             return "Severe"
 
-        # 🔥 WEIGHTED WITH CONFIDENCE
-        weighted_test = test_score * test_conf * 0.65
-        weighted_eye = eye_score * eye_conf * 0.35
+        # 🔥 NORMALIZED WEIGHTED SCORE
+        weighted_score = (test_score * test_conf * 0.65) + (eye_score * eye_conf * 0.35)
 
-        final_score = weighted_test + weighted_eye
+        # 🔥 NORMALIZE by total weight contribution
+        total_weight = (test_conf * 0.65) + (eye_conf * 0.35)
 
-        final_index = round(final_score)
+        if total_weight == 0:
+            final_score = 0
+        else:
+            final_score = weighted_score / total_weight
 
-        # Clamp just in case
-        final_index = max(0, min(3, final_index))
-
-        for key, value in RISK_ORDER.items():
-            if value == final_index:
-                return key
+        # 🔥 SMART THRESHOLDS (BETTER THAN ROUND)
+        if final_score < 0.75:
+            return "Safe"
+        elif final_score < 1.5:
+            return "Mild"
+        elif final_score < 2.5:
+            return "Moderate"
+        else:
+            return "Severe"
 
     def load_patient_test_results(self):
 
@@ -739,257 +787,7 @@ class EyeScanPage(ctk.CTkFrame):
         self.save_eye.configure(state="normal")
 
     def on_show(self):
+        self.stop_camera()
         self.start_camera()
         self.card_builder()
         send_relay_on()
-
-
-class EyeResultModal(ctk.CTkToplevel):
-    def __init__(self, master, controller, x=100, y=100, *args, **kwargs):
-        super().__init__(master, fg_color="#FFFFFF", *args, **kwargs)
-
-        self.controller = controller
-
-        self.eye_icon = ctk.CTkImage(Image.open(EYE), size=(35, 35))
-        self.percent_icon = ctk.CTkImage(Image.open(PERCENT), size=(35, 35))
-
-        # SYSTEM LOGO
-        self.logo_img = ctk.CTkImage(
-            light_image=Image.open(LOGO),
-            size=(51, 51),
-        )
-
-        self.container = ctk.CTkFrame(
-            self,
-            width=1100,
-            height=810,
-            # fg_color="#E2E8F0",
-            fg_color="transparent",
-        )
-        self.container.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
-
-        Square(
-            self.container,
-            size=60,
-            image=self.logo_img,
-            fg_color=PRIMARY,
-        ).place(x=10, y=0)
-        ctk.CTkLabel(
-            self.container,
-            text="LeptoSight",
-            font=("Inter", 22, "bold"),
-            text_color=TEXT_PRIMARY,
-        ).place(x=90, y=5)
-
-        ctk.CTkLabel(
-            self.container,
-            text="An AI-Powered for Early Detection of Leptospirosis",
-            font=("Inter", 16),
-            wraplength=670,
-            justify="left",
-            text_color=TEXT_SECONDARY,
-        ).place(x=90, y=30)
-
-        ctk.CTkLabel(
-            self,
-            text="Eye Scan Results",
-            font=("Inter", 22, "bold"),
-        ).place(x=30, y=90)
-
-        ctk.CTkLabel(
-            self.container,
-            text="Raw Eye Image",
-            font=("Inter", 17, "bold"),
-            text_color=TEXT_SECONDARY,
-        ).place(x=15, y=120)
-
-        ctk.CTkLabel(
-            self.container,
-            text="Scan Eye Image",
-            font=("Inter", 17, "bold"),
-            text_color=TEXT_SECONDARY,
-        ).place(x=565, y=120)
-
-        self.raw_image_container = ctk.CTkFrame(
-            self.container,
-            width=530,
-            height=400,
-            corner_radius=9,
-            fg_color="#E2E8F0",
-        )
-        self.raw_image_container.place(x=10, y=160)
-
-        self.raw_image = ctk.CTkFrame(
-            self.raw_image_container,
-            height=380,
-            width=510,
-            fg_color="transparent",
-        )
-        self.raw_image.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
-        self.raw_image_label = ctk.CTkLabel(self.raw_image, text="")
-        self.raw_image_label.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
-
-        self.scan_image_container = ctk.CTkFrame(
-            self.container,
-            width=530,
-            height=400,
-            corner_radius=9,
-            fg_color="#E2E8F0",
-        )
-        self.scan_image_container.place(x=560, y=160)
-
-        self.scan_image = ctk.CTkFrame(
-            self.scan_image_container,
-            height=380,
-            width=510,
-            fg_color="transparent",
-        )
-        self.scan_image.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
-        self.scan_image_label = ctk.CTkLabel(self.scan_image, text="")
-        self.scan_image_label.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
-
-        ctk.CTkLabel(
-            self.container,
-            text="Results",
-            font=("Inter", 19, "bold"),
-            text_color="#1E293B",
-        ).place(x=10, y=570)
-
-        self.eye_class_container = ctk.CTkFrame(
-            self.container,
-            width=530,
-            height=100,
-            corner_radius=9,
-            fg_color="#E2E8F0",
-        )
-        self.eye_class_container.place(x=10, y=610)
-
-        Avatar(
-            self.eye_class_container,
-            width=60,
-            height=60,
-            image=self.eye_icon,
-            fg_color=PINK,
-        ).place(x=450, y=20)
-
-        ctk.CTkLabel(
-            self.eye_class_container,
-            text="Eye Classification",
-            font=("Inter", 17),
-            text_color=TEXT_SECONDARY,
-        ).place(x=20, y=10)
-
-        # VALUE
-        self.eye_class_value = ctk.CTkLabel(
-            self.eye_class_container,
-            text="--",
-            font=("Poppins", 35),
-            text_color=TEXT_PRIMARY,
-        )
-        self.eye_class_value.place(x=20, y=40)
-
-        self.eye_conf_container = ctk.CTkFrame(
-            self.container,
-            width=530,
-            height=100,
-            corner_radius=9,
-            fg_color="#E2E8F0",
-        )
-        self.eye_conf_container.place(x=560, y=610)
-
-        Avatar(
-            self.eye_conf_container,
-            width=60,
-            height=60,
-            image=self.percent_icon,
-            fg_color=VIOLET,
-        ).place(x=450, y=20)
-
-        ctk.CTkLabel(
-            self.eye_conf_container,
-            text="Eye Confidence",
-            font=("Inter", 17),
-            text_color=TEXT_SECONDARY,
-        ).place(x=20, y=10)
-
-        # VALUE
-        self.eye_conf_value = ctk.CTkLabel(
-            self.eye_conf_container,
-            text="--",
-            font=("Poppins", 35),
-            text_color=TEXT_PRIMARY,
-        )
-        self.eye_conf_value.place(x=20, y=40)
-
-        ctk.CTkButton(
-            self.container,
-            text="View Results",
-            fg_color=PRIMARY,
-            hover_color=SECONDARY,
-            font=("Inter", 20, "bold"),
-            text_color="#FFFFFF",
-            height=55,
-            width=180,
-            corner_radius=10,
-            command=lambda: self.proceed_results(),
-        ).place(x=910, y=740)
-
-    def populate_data(self):
-
-        question_id = self.controller.current_question_id
-        data = self.controller.db.load_eye_results(question_id)
-
-        if not data:
-            print("No eye results found")
-            return
-
-        # ✅ Load images
-        self.load_ctk_image(data.get("eye_image"), self.raw_image_label)
-        self.load_ctk_image(data.get("eye_scan"), self.scan_image_label)
-
-        # ✅ Safe extraction
-        eye_class = data.get("classification", "Unknown")
-        eye_conf = data.get("confidence", 0)
-
-        # ✅ Display
-        self.eye_class_value.configure(text=eye_class)
-
-        percent = f"{round(float(eye_conf), 2)}%"
-        self.eye_conf_value.configure(text=percent)
-
-    def load_ctk_image(self, path, label, size=(510, 380)):
-        from PIL import Image
-
-        if not path:
-            return
-
-        try:
-            # Load from file path
-            img = Image.open(path)
-
-            # Resize
-            img = img.resize(size)
-
-            # Convert to CTkImage
-            ctk_img = ctk.CTkImage(light_image=img, size=size)
-
-            # ⚠️ IMPORTANT: store reference
-            label.image = ctk_img
-
-            # Display
-
-            label.configure(image=ctk_img, text="")
-
-        except Exception as e:
-            print("IMAGE LOAD ERROR:", e)
-
-    def proceed_results(self):
-        self.close()
-        self.controller.change_window("ResultsPage")
-
-    def close(self):
-        try:
-            self.grab_release()
-        except:
-            pass
-        self.destroy()

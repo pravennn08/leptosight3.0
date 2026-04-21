@@ -54,6 +54,7 @@ PERCENT = os.path.join(BASE_DIR, "assets", "icons", "percent.png")
 USER = os.path.join(BASE_DIR, "assets", "icons", "user.png")
 LIB = os.path.join(BASE_DIR, "assets", "icons", "lib.png")
 CROSS = os.path.join(BASE_DIR, "assets", "icons", "x.png")
+ZOOM_IN = os.path.join(BASE_DIR, "assets", "icons", "zoom-in.png")
 
 
 # COLOR PALETTE
