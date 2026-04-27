@@ -3,7 +3,7 @@ import pandas as pd
 import shap
 import os
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "test_model.pkl")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "custom.pkl")
 
 MODEL = joblib.load(MODEL_PATH)
 EXPLAINER = shap.TreeExplainer(MODEL)

@@ -27,6 +27,9 @@ from constants.seeds import (
     PERCENT,
     PINK,
     VIOLET,
+    VIOLET_HOVER,
+    YELLOW_HOVER,
+    BLUE_HOVER,
     LOGO,
     ZOOM_IN,
 )
@@ -34,7 +37,6 @@ from ..components.avatar import Avatar
 from ..components.square import Square
 from ..components.eye_result_modal import EyeResultModal
 from CTkMessagebox import CTkMessagebox as mb
-from models.eye_classification_model import EyeClassificationModel
 
 
 class EyeScanPage(ctk.CTkFrame):
@@ -49,7 +51,7 @@ class EyeScanPage(ctk.CTkFrame):
         )
         self.controller = controller
         self.db = controller.db
-        self.eye_model = EyeClassificationModel()
+        self.eye_model = controller.eye_model
 
         self.current_frame = None
         self.preview_mode = False
@@ -68,10 +70,10 @@ class EyeScanPage(ctk.CTkFrame):
         )
 
         # ICONS
-        self.camera_icon = ctk.CTkImage(Image.open(CAMERA), size=(70, 70))
-        self.flash_icon = ctk.CTkImage(Image.open(FLASH), size=(50, 50))
-        self.save_icon = ctk.CTkImage(Image.open(SAVE), size=(50, 50))
-        self.zoom_icon = ctk.CTkImage(Image.open(ZOOM_IN), size=(50, 50))
+        self.camera_icon = ctk.CTkImage(Image.open(CAMERA), size=(60, 60))
+        self.flash_icon = ctk.CTkImage(Image.open(FLASH), size=(60, 60))
+        self.save_icon = ctk.CTkImage(Image.open(SAVE), size=(60, 60))
+        self.zoom_icon = ctk.CTkImage(Image.open(ZOOM_IN), size=(60, 60))
 
         self.check_icon = ctk.CTkImage(Image.open(CHECK), size=(24, 24))
 
@@ -89,28 +91,28 @@ class EyeScanPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             self, text="Eye Scan", font=("Arial", 33, "bold"), text_color=TEXT_PRIMARY
-        ).place(x=40, y=10)
+        ).place(x=20, y=10)
         ctk.CTkLabel(
             self,
             text="Please center your eye in the frame and hold steady while the scan is in progress.",
             font=("Poppins", 20),
             text_color=TEXT_SECONDARY,
-        ).place(x=40, y=60)
+        ).place(x=20, y=60)
 
         self.container = ctk.CTkFrame(
             self,
-            height=650,
+            height=700,
             width=1000,
             fg_color="#E2E8F0",
             border_width=2,
             border_color="#E2E8F0",
             corner_radius=15,
         )
-        self.container.place(x=40, y=100)
+        self.container.place(x=20, y=100)
 
         self.camera_container = ctk.CTkFrame(
             self.container,
-            height=600,
+            height=650,
             width=950,
         )
         self.camera_container.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
@@ -118,22 +120,31 @@ class EyeScanPage(ctk.CTkFrame):
         self.camera_label = tk.Label(self.camera_container, text="")
         self.camera_label.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
 
-        self.actions_container = ctk.CTkFrame(
+        # self.actions_container = ctk.CTkFrame(
+        #     self,
+        #     height=170,
+        #     width=1000,
+        #     fg_color="transparent",
+        # )
+        # self.actions_container.place(x=40, y=750)
+        self.instruction_container = ctk.CTkFrame(
             self,
-            height=170,
-            width=1000,
+            height=650,
+            width=380,
+            # fg_color="#E2E8F0",
             fg_color="transparent",
+            corner_radius=15,
         )
-        self.actions_container.place(x=40, y=750)
+        self.instruction_container.place(x=1070, y=100)
 
         self.capture_btn = ctk.CTkButton(
-            self.actions_container,
+            self.instruction_container,
             image=self.camera_icon,
-            width=150,
-            height=130,
+            width=120,
+            height=100,
             text="",
             fg_color=BLUE,
-            hover_color="#0284C7",
+            hover=False,
             corner_radius=10,
             command=self.capture_eye,
             # compound="center",
@@ -141,107 +152,93 @@ class EyeScanPage(ctk.CTkFrame):
         self.capture_btn.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
 
         ctk.CTkLabel(
-            self.actions_container,
+            self.instruction_container,
             text="CAPTURE",
             font=("Inter", 16, "bold"),
             text_color=TEXT_SECONDARY,
-        ).place(relx=0.5, rely=0.97, anchor=ctk.CENTER)
+        ).place(relx=0.5, rely=0.60, anchor=ctk.CENTER)
 
         self.open_flash = ctk.CTkButton(
-            self.actions_container,
+            self.instruction_container,
             image=self.flash_icon,
-            width=100,
-            height=90,
+            width=120,
+            height=100,
             text="",
             fg_color=YELLOW,
+            hover=False,
             corner_radius=10,
             command=self.toggle_flash,
             # compound="center",
         )
-        self.open_flash.place(relx=0.35, rely=0.5, anchor=ctk.CENTER)
+        self.open_flash.place(relx=0.5, rely=0.29, anchor=ctk.CENTER)
 
         ctk.CTkLabel(
-            self.actions_container,
+            self.instruction_container,
             text="FLASH",
             font=("Inter", 16, "bold"),
             text_color=TEXT_SECONDARY,
-        ).place(relx=0.35, rely=0.85, anchor=ctk.CENTER)
+        ).place(relx=0.5, rely=0.39, anchor=ctk.CENTER)
 
         self.save_eye = ctk.CTkButton(
-            self.actions_container,
+            self.instruction_container,
             image=self.save_icon,
-            width=100,
-            height=90,
+            width=120,
+            height=100,
+            fg_color=PRIMARY,
+            hover=False,
             text="",
-            fg_color="#14B8A6",
             corner_radius=10,
             # compound="center",
             command=self.save_eye_scan,
         )
-        self.save_eye.place(relx=0.65, rely=0.5, anchor=ctk.CENTER)
+        self.save_eye.place(relx=0.5, rely=0.71, anchor=ctk.CENTER)
         ctk.CTkLabel(
-            self.actions_container,
+            self.instruction_container,
             text="SAVE",
             font=("Inter", 16, "bold"),
             text_color=TEXT_SECONDARY,
-        ).place(relx=0.65, rely=0.85, anchor=ctk.CENTER)
+        ).place(relx=0.5, rely=0.81, anchor=ctk.CENTER)
 
         self.zoom_eye_btn = ctk.CTkButton(
-            self.actions_container,
+            self.instruction_container,
             image=self.zoom_icon,
-            width=100,
-            height=90,
+            width=120,
+            height=100,
             text="",
-            fg_color="#14B8A6",
+            fg_color=VIOLET,
+            hover=False,
             corner_radius=10,
             command=self.zoom_eye,
         )
-        self.zoom_eye_btn.place(relx=0.77, rely=0.5, anchor=ctk.CENTER)
-
-        self.instruction_container = ctk.CTkFrame(
-            self,
-            height=430,
-            width=380,
-            fg_color="#E2E8F0",
-            corner_radius=15,
-        )
-        self.instruction_container.place(x=1070, y=100)
-
-        Avatar(
-            self.instruction_container,
-            image=self.check_icon,
-            width=40,
-            height=40,
-            fg_color="#14B8A6",
-        ).place(x=30, y=30)
+        self.zoom_eye_btn.place(relx=0.5, rely=0.08, anchor=ctk.CENTER)
 
         ctk.CTkLabel(
             self.instruction_container,
-            text="Best Position Guide",
-            text_color=TEXT_PRIMARY,
-            font=("Inter", 20),
-        ).place(x=80, y=35)
+            text="ZOOM",
+            font=("Inter", 16, "bold"),
+            text_color=TEXT_SECONDARY,
+        ).place(relx=0.5, rely=0.18, anchor=ctk.CENTER)
 
         ctk.CTkLabel(
             self,
             text="PREVIEW",
             font=("Inter", 16, "bold"),
             text_color=TEXT_SECONDARY,
-        ).place(x=1075, y=560)
+        ).place(x=1225, y=800)
 
         self.preview_container = ctk.CTkFrame(
             self,
-            height=270,
-            width=380,
+            height=150,
+            width=170,
             fg_color="#E2E8F0",
             corner_radius=15,
         )
-        self.preview_container.place(x=1070, y=595)
+        self.preview_container.place(x=1180, y=650)
 
         self.preview_frame = ctk.CTkFrame(
             self.preview_container,
-            height=260,
-            width=370,
+            height=120,
+            width=150,
             fg_color="transparent",
         )
         self.preview_frame.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
@@ -250,34 +247,6 @@ class EyeScanPage(ctk.CTkFrame):
             text="",
         )
         self.preview_label.pack(expand=True)
-
-    # def zoom_eye(self):
-    #     if not hasattr(self, "picam2"):
-    #         return
-
-    #     # Increase zoom
-    #     self.zoom_level += self.zoom_step
-
-    #     if self.zoom_level > self.max_zoom:
-    #         self.zoom_level = 1.0  # reset zoom (toggle behavior)
-
-    #     # Get full sensor size
-    #     sensor_width, sensor_height = self.picam2.camera_properties["PixelArraySize"]
-
-    #     # Compute crop size (smaller = more zoom)
-    #     crop_width = int(sensor_width / self.zoom_level)
-    #     crop_height = int(sensor_height / self.zoom_level)
-
-    #     # Center the crop
-    #     crop_x = (sensor_width - crop_width) // 2
-    #     crop_y = (sensor_height - crop_height) // 2
-
-    #     # Apply zoom (THIS IS THE IMPORTANT PART)
-    #     self.picam2.set_controls(
-    #         {"ScalerCrop": (crop_x, crop_y, crop_width, crop_height)}
-    #     )
-
-    #     print(f"Zoom level: {self.zoom_level}")
 
     def zoom_eye(self):
         if not hasattr(self, "picam2"):
@@ -316,7 +285,7 @@ class EyeScanPage(ctk.CTkFrame):
         self.zoom_level = 1.0
 
         config = self.picam2.create_preview_configuration(
-            main={"size": (950, 600), "format": "RGB888"}
+            main={"size": (1000, 650), "format": "RGB888"}
         )
 
         self.picam2.configure(config)
@@ -360,10 +329,10 @@ class EyeScanPage(ctk.CTkFrame):
         img = Image.fromarray(self.current_frame)
 
         # Resize to fit preview container
-        img = img.resize((370, 260))
+        img = img.resize((150, 120))
 
         # Convert to CTkImage (correct for CTkLabel)
-        ctk_img = ctk.CTkImage(light_image=img, size=(350, 240))
+        ctk_img = ctk.CTkImage(light_image=img, size=(140, 110))
 
         # Store reference (IMPORTANT to avoid garbage collection)
         self.preview_ctk_img = ctk_img
@@ -546,42 +515,6 @@ class EyeScanPage(ctk.CTkFrame):
             )
             return
 
-    # def compute_risk(self, test_class, test_conf, eye_class, eye_conf):
-    #     RISK_ORDER = {
-    #         "Safe": 0,
-    #         "Mild": 1,
-    #         "Moderate": 2,
-    #         "Severe": 3,
-    #     }
-
-    #     # Handle unknowns
-    #     if test_class == "Unknown":
-    #         return eye_class
-    #     if eye_class == "Unknown":
-    #         return test_class
-
-    #     test_score = RISK_ORDER[test_class]
-    #     eye_score = RISK_ORDER[eye_class]
-
-    #     # 🔥 HARD SAFETY RULE
-    #     if test_score == 3 or eye_score == 3:
-    #         return "Severe"
-
-    #     # 🔥 WEIGHTED WITH CONFIDENCE
-    #     weighted_test = test_score * test_conf * 0.65
-    #     weighted_eye = eye_score * eye_conf * 0.35
-
-    #     final_score = weighted_test + weighted_eye
-
-    #     final_index = round(final_score)
-
-    #     # Clamp just in case
-    #     final_index = max(0, min(3, final_index))
-
-    #     for key, value in RISK_ORDER.items():
-    #         if value == final_index:
-    #             return key
-
     def compute_risk(self, test_class, test_conf, eye_class, eye_conf):
 
         RISK_ORDER = {
@@ -607,6 +540,9 @@ class EyeScanPage(ctk.CTkFrame):
         # 🔥 HARD RULE (VERY GOOD - KEEP THIS)
         if test_score == 3 or eye_score == 3:
             return "Severe"
+
+        if test_score > eye_score:
+            return test_class
 
         # 🔥 NORMALIZED WEIGHTED SCORE
         weighted_score = (test_score * test_conf * 0.65) + (eye_score * eye_conf * 0.35)
@@ -720,51 +656,6 @@ class EyeScanPage(ctk.CTkFrame):
         self.top.grab_set()
         self.top.populate_data()
 
-    def card_builder(self):
-        start_y = 90
-        gap = 80
-
-        for i, item in enumerate(CAMERA_TIPS):
-            y_position = start_y + (i * gap)
-
-            card = ctk.CTkFrame(
-                self.instruction_container,
-                width=340,
-                height=70,
-                fg_color="#EEF2F7",
-                corner_radius=10,
-            )
-            card.place(x=20, y=y_position)
-
-            # ICON
-            icon_image = (
-                self.tips_icons[i] if i < len(self.tips_icons) else self.bell_icon
-            )
-
-            Avatar(
-                card,
-                image=icon_image,
-                width=50,
-                height=50,
-                fg_color="#14B8A6",
-            ).place(x=12, y=10)
-
-            # TITLE
-            ctk.CTkLabel(
-                card,
-                text=item.get("title", ""),
-                font=("Inter", 17),
-                text_color=TEXT_PRIMARY,
-            ).place(x=70, y=7)
-
-            # SUBTITLE
-            ctk.CTkLabel(
-                card,
-                text=item.get("sub_title", ""),
-                font=("Poppins", 14),
-                text_color=TEXT_SECONDARY,
-            ).place(x=70, y=30)
-
     def clear_fields(self):
         # 🔥 RESET STATE
         self.current_frame = None
@@ -773,7 +664,7 @@ class EyeScanPage(ctk.CTkFrame):
         self.eye_confidence = None
 
         # 🔥 RESET PREVIEW
-        self.preview_label.configure(image="", text="")
+        # self.preview_label.configure(image="", text="")
 
         # 🔥 RESET FLASH
         self.is_on = False
@@ -787,7 +678,8 @@ class EyeScanPage(ctk.CTkFrame):
         self.save_eye.configure(state="normal")
 
     def on_show(self):
-        self.stop_camera()
-        self.start_camera()
-        self.card_builder()
-        send_relay_on()
+        pass
+        # self.stop_camera()
+        # self.start_camera()
+        # self.card_builder()
+        # send_relay_on()

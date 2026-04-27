@@ -12,7 +12,6 @@ from constants.seeds import (
 )
 from ..components.avatar import Avatar
 from CTkMessagebox import CTkMessagebox as mb
-from models.test_classification_model import TestClassificationModel
 import threading
 
 
@@ -28,10 +27,10 @@ class QuestionsPage(ctk.CTkFrame):
         )
         self.controller = controller
         self.db = controller.db
-        self.test_model = TestClassificationModel()
+        self.test_model = controller.test_model
 
         # ICONS
-        self.question_icon = ctk.CTkImage(Image.open(QUESTIONS), size=(40, 40))
+        self.question_icon = ctk.CTkImage(Image.open(QUESTIONS), size=(50, 50))
         self.prev_icon = ctk.CTkImage(Image.open(CHEVRON_LEFT), size=(40, 40))
         self.next_icon = ctk.CTkImage(Image.open(CHEVRON_RIGHT), size=(40, 40))
 
@@ -47,14 +46,14 @@ class QuestionsPage(ctk.CTkFrame):
             text="Symptom Assessment Questionnaire",
             font=("Inter", 30, "bold"),
             text_color=TEXT_PRIMARY,
-        ).place(x=40, y=10)
+        ).place(x=20, y=10)
 
         ctk.CTkLabel(
             self,
             text="Please answer all questions honestly based on your current condition.",
             font=("Poppins", 20),
             text_color=TEXT_SECONDARY,
-        ).place(x=40, y=50)
+        ).place(x=20, y=50)
 
         self.pagination_label = ctk.CTkLabel(
             self,
@@ -62,11 +61,11 @@ class QuestionsPage(ctk.CTkFrame):
             font=("Inter", 18),
             text_color=TEXT_SECONDARY,
         )
-        self.pagination_label.place(x=40, y=90)
+        self.pagination_label.place(x=20, y=90)
 
         self.progress_bar = ctk.CTkProgressBar(
             self,
-            width=1290,
+            width=1300,
             height=15,
             fg_color="#E5E7EB",  # light gray (track)
             progress_color="#14B8A6",  # your primary (fill)
@@ -74,7 +73,7 @@ class QuestionsPage(ctk.CTkFrame):
             mode="determinate",
         )
         self.progress_bar.set(0)
-        self.progress_bar.place(x=40, y=130)
+        self.progress_bar.place(x=20, y=130)
 
         self.percent_label = ctk.CTkLabel(
             self,
@@ -82,7 +81,7 @@ class QuestionsPage(ctk.CTkFrame):
             font=("Poppins", 18),
             text_color=TEXT_SECONDARY,
         )
-        self.percent_label.place(x=1200, y=90)
+        self.percent_label.place(x=1185, y=90)
 
         self.questions_container = ctk.CTkFrame(
             self,
@@ -94,7 +93,7 @@ class QuestionsPage(ctk.CTkFrame):
             width=1300,
             height=640,
         )
-        self.questions_container.place(x=40, y=170)
+        self.questions_container.place(x=20, y=170)
 
         Avatar(
             self.questions_container,
@@ -119,7 +118,7 @@ class QuestionsPage(ctk.CTkFrame):
             text_color="#FFFFFF",
             dropdown_fg_color="#FFFFFF",
             dropdown_text_color="#0F172A",
-            dropdown_hover_color="#ECF1F7",
+            dropdown_hover_color="#D4D6DA",
             dropdown_font=("Inter", 20.5),
             corner_radius=9,
             command=self.toggle_translate,
@@ -154,7 +153,7 @@ class QuestionsPage(ctk.CTkFrame):
             corner_radius=10,
             command=lambda: self.change_page("Prev"),
         )
-        self.prev_btn.place(x=45, y=830)
+        self.prev_btn.place(x=25, y=830)
 
         self.next_btn = ctk.CTkButton(
             self,
@@ -171,7 +170,7 @@ class QuestionsPage(ctk.CTkFrame):
             corner_radius=10,
             command=lambda: self.change_page("Next"),
         )
-        self.next_btn.place(x=1125, y=830)
+        self.next_btn.place(x=1105, y=830)
 
         self.question_builder()
 

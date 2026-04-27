@@ -25,7 +25,7 @@ BELL = os.path.join(BASE_DIR, "assets", "icons", "bell.png")
 PLUS = os.path.join(BASE_DIR, "assets", "icons", "plus.png")
 CALENDAR = os.path.join(BASE_DIR, "assets", "icons", "calendar.png")
 TRACK_ACTIVITY = os.path.join(BASE_DIR, "assets", "icons", "track.png")
-QUESTIONS = os.path.join(BASE_DIR, "assets", "icons", "questions.png")
+QUESTIONS = os.path.join(BASE_DIR, "assets", "icons", "question.png")
 CHEVRON_RIGHT = os.path.join(BASE_DIR, "assets", "icons", "chevron-right.png")
 RETRY = os.path.join(BASE_DIR, "assets", "icons", "retry.png")
 CHEVRON_LEFT = os.path.join(BASE_DIR, "assets", "icons", "chevron-left.png")
@@ -47,7 +47,7 @@ HEART = os.path.join(BASE_DIR, "assets", "icons", "heart.png")
 READ = os.path.join(BASE_DIR, "assets", "icons", "read.png")
 RECALL = os.path.join(BASE_DIR, "assets", "icons", "recall.png")
 SKIP = os.path.join(BASE_DIR, "assets", "icons", "skip.png")
-EVAL = os.path.join(BASE_DIR, "assets", "icons", "eval.png")
+NAV = os.path.join(BASE_DIR, "assets", "icons", "nav.png")
 SELECT = os.path.join(BASE_DIR, "assets", "icons", "select.png")
 SHIELD = os.path.join(BASE_DIR, "assets", "icons", "warning.png")
 PERCENT = os.path.join(BASE_DIR, "assets", "icons", "percent.png")
@@ -55,6 +55,7 @@ USER = os.path.join(BASE_DIR, "assets", "icons", "user.png")
 LIB = os.path.join(BASE_DIR, "assets", "icons", "lib.png")
 CROSS = os.path.join(BASE_DIR, "assets", "icons", "x.png")
 ZOOM_IN = os.path.join(BASE_DIR, "assets", "icons", "zoom-in.png")
+AVATAR_USER = os.path.join(BASE_DIR, "assets", "icons", "avatar_user.png")
 
 
 # COLOR PALETTE
@@ -129,8 +130,8 @@ TEST_INSTRUCTION = [
         "sub_title": "Choose the option that best reflects your current or recent condition",
     },
     {
-        "title": "Consider Severity",
-        "sub_title": "Evaluate the intensity and frequency of each symptom or experience",
+        "title": "Use Navigation Buttons",
+        "sub_title": "Tap 'Next' to continue or 'Previous' to go back and review your answers",
     },
     {
         "title": "Avoid Skipping",
@@ -142,6 +143,24 @@ TEST_INSTRUCTION = [
     },
 ]
 
+TEMPERATURE_INSTRUCTION = [
+    {
+        "title": "Align forehead",
+        "sub_title": "Position it in front of the IR sensor",
+    },
+    {
+        "title": "Keep proper distance",
+        "sub_title": "Maintain 2–3 cm from the sensor",
+    },
+    {
+        "title": "Start scan",
+        "sub_title": "Tap scan and stay still for 5 seconds",
+    },
+    {
+        "title": "Save result",
+        "sub_title": "Tap save when temperature appears",
+    },
+]
 
 # CAMERA TIPS
 CAMERA_TIPS = [
@@ -154,12 +173,12 @@ CAMERA_TIPS = [
         "sub_title": "Look at the center dot",
     },
     {
-        "title": "Good lighting",
-        "sub_title": "Avoid shadows and glare",
+        "title": "Start scan",
+        "sub_title": "Tap scan and remain still",
     },
     {
-        "title": "Proper distance",
-        "sub_title": "Stay 40–60 cm from camera",
+        "title": "Save result",
+        "sub_title": "Press save when temperature appears",
     },
 ]
 
@@ -214,19 +233,19 @@ STRUCTURED_QUESTIONS = [
         ],
     },
     {
-        "question": "How did your illness begin?",
+        "question": "How did your symptoms begin?",
         "choices": [
             "Suddenly within a day",
             "Gradually over several days",
             "I am not sure",
-            "I have not noticed a clear change",
+            "I do not have any symptoms",
         ],
-        "question_translate": "Paano nagsimula ang iyong nararamdaman na sakit?",
+        "question_translate": "Paano nagsimula ang iyong mga sintomas?",
         "choices_translate": [
             "Biglaan sa loob ng isang araw",
             "Unti-unti sa loob ng ilang araw",
             "Hindi sigurado",
-            "Walang malinaw na pagbabago",
+            "Wala akong anumang sintomas",
         ],
     },
     {
@@ -259,17 +278,17 @@ STRUCTURED_QUESTIONS = [
     {
         "question": "When you have a headache, how intense does it feel?",
         "choices": [
-            "Mild pressure",
-            "Moderate pain but tolerable",
-            "Strong pain affecting focus",
+            "No headache",
+            "Mild pain but tolerable",
+            "Moderate pain affecting focus",
             "Severe pain affecting daily activities",
         ],
         "question_translate": "Kapag sumasakit ang iyong ulo, gaano ito kalala?",
         "choices_translate": [
-            "Banayad na pressure",
-            "Katamtamang sakit ngunit natitiis",
-            "Malakas na sakit na nakakaapekto sa pag-iisip",
-            "Matinding sakit na nakakaapekto sa gawain",
+            "alang sakit ng ulo",
+            "Bahagyang sakit ngunit natitiis",
+            "Katamtamang sakit na nakakaapekto sa konsentrasyon",
+            "Matinding sakit na nakakaapekto sa pang araw-araw na gawain",
         ],
     },
     {
@@ -409,14 +428,14 @@ STRUCTURED_QUESTIONS = [
     {
         "question": "Which activity makes fatigue most noticeable?",
         "choices": [
-            "Walking",
-            "Standing",
-            "Household/work tasks",
-            "Resting still feels tiring",
+            "None",
+            "Light Activities(Walking/Standing)",
+            "Moderate Activities",
+            "Vigorous Activities",
         ],
         "question_translate": "Sa anong gawain pinaka-napapansin ang pagkapagod?",
         "choices_translate": [
-            "Paglalakad",
+            "Wala",
             "Pagtayo",
             "Gawain sa bahay o trabaho",
             "Kahit nagpapahinga ay pagod pa rin",
@@ -476,18 +495,18 @@ STRUCTURED_QUESTIONS = [
 RECOMMENDATIONS = [
     {
         "classification": "Safe",
-        "recommendation": "Recommend practicing preventive measures, avoiding flood water exposure, and maintaining good hygiene.",
+        "recommendation": "Practice preventive measures such as avoiding exposure to floodwater, maintaining proper hygiene, and monitoring for any early symptoms.",
     },
     {
         "classification": "Mild",
-        "recommendation": "Recommend to take medicine antibiotics are needed. Keep a close watch on your symptoms.",
+        "recommendation": "Initiate oral antibiotic therapy using Doxycycline or Amoxicillin. Monitor symptoms and seek medical consultation if the conditions worsens.",
     },
     {
         "classification": "Moderate",
-        "recommendation": "Recommend taking antibiotics only with a proper prescription from a health worker. Laboratory tests may be needed to confirm your condition.",
+        "recommendation": "Initiate antibiotic treatment under medical supervision using Doxycycline, Penicillin G, or  Ceftriaxone. Perform laboratory tests to confirm the diagnosis and guide treatment.",
     },
     {
         "classification": "Severe",
-        "recommendation": "Recommend going to the nearest hospital immediately for urgent medical care.",
+        "recommendation": "Require immediate hospital admission. Administer intravenous antibiotics such as Penicillin G or Ceftriaxone, along with urgent medical care and close monitoring.",
     },
 ]

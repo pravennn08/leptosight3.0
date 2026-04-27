@@ -690,11 +690,11 @@ class DatabaseService:
         try:
             query = f"""
             SELECT
-                eye_classification,
+                risk_level,
                 COUNT(*) AS total
             FROM {self.diagnostic_table}
             WHERE patient_id = %s
-            GROUP BY eye_classification;
+            GROUP BY risk_level;
             """
 
             with self.conn.cursor() as cur:

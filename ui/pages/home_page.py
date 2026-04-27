@@ -44,9 +44,7 @@ class HomePage(ctk.CTkFrame):
             self,
             height=170,
             width=1050,
-            fg_color="#F8FAFC",
-            border_width=2,
-            border_color="#E2E8F0",
+            fg_color="#E2E8F0",
             corner_radius=20,
         )
         self.welcome_frame.place(x=0, y=0)
@@ -93,9 +91,7 @@ class HomePage(ctk.CTkFrame):
             self,
             height=120,
             width=390,
-            fg_color="#F8FAFC",
-            border_width=2,
-            border_color="#E2E8F0",
+            fg_color="#E2E8F0",
             corner_radius=20,
         )
         self.last_activity_frame.place(x=1070, y=0)
@@ -136,10 +132,8 @@ class HomePage(ctk.CTkFrame):
 
         self.line_graph_frame = ctk.CTkFrame(
             self.graphs_container,
-            fg_color="#F8FAFC",
-            border_width=2,
+            fg_color="#E2E8F0",
             width=720,
-            border_color="#E2E8F0",
             corner_radius=20,
             height=510,
         )
@@ -165,9 +159,7 @@ class HomePage(ctk.CTkFrame):
 
         self.bar_graph_frame = ctk.CTkFrame(
             self.graphs_container,
-            fg_color="#F8FAFC",
-            border_width=2,
-            border_color="#E2E8F0",
+            fg_color="#E2E8F0",
             corner_radius=20,
             height=510,
             width=720,
@@ -202,9 +194,7 @@ class HomePage(ctk.CTkFrame):
                 self,
                 width=WIDTH,
                 height=HEIGHT,
-                fg_color="#F8FAFC",
-                border_width=2,
-                border_color="#E2E8F0",
+                fg_color="#E2E8F0",
                 corner_radius=20,
             )
             card.place(x=x_position, y=START_Y)
@@ -239,6 +229,7 @@ class HomePage(ctk.CTkFrame):
 
     def on_show(self):
         user = self.controller.current_user
+        # user = [None, None]
 
         if not user:
             return

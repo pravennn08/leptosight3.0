@@ -4,24 +4,15 @@ from PIL import Image
 from constants.seeds import (
     TEXT_PRIMARY,
     TEXT_SECONDARY,
-    GREEN,
-    CAMERA,
-    FLASH,
-    SAVE,
-    CHECK,
+    FUNNEL,
+    CROSS,
+    PINK,
     BLUE,
-    RED,
-    EYE,
-    DISTANCE,
-    PRIMARY,
-    CAMERA_TIPS,
-    CAMERA_PROMPT,
-    RECOMMENDATIONS,
-    SECONDARY,
-    QUESTIONS,
-    CHEVRON_LEFT,
-    CHEVRON_RIGHT,
-    YELLOW,
+    BLUE_HOVER,
+    VIOLET,
+    PINK_HOVER,
+    VIOLET_HOVER,
+    GREEN,
 )
 from ..components.avatar import Avatar
 from ..components.messagebox import MessageBox as mb
@@ -41,66 +32,170 @@ class RecordsPage(ctk.CTkFrame):
             # corner_radius=15,
         )
         self.controller = controller
+        self.admin_db = controller.admin_db
 
-        ctk.CTkLabel(
-            self, text="Records", font=("Arial", 33, "bold"), text_color=TEXT_PRIMARY
-        ).place(x=40, y=10)
-        ctk.CTkLabel(
+        self.filter_icon = ctk.CTkImage(Image.open(FUNNEL), size=(30, 30))
+        self.cross_icon = ctk.CTkImage(Image.open(CROSS), size=(26, 26))
+
+        self.record_filter_frame = ctk.CTkFrame(
             self,
-            text="Please center your eye in the frame and hold steady while the scan is in progress.",
-            font=("Poppins", 20),
-            text_color=TEXT_SECONDARY,
-        ).place(x=40, y=60)
-
-        self.actions_frame = ctk.CTkFrame(
-            self, width=1400, height=100, fg_color="transparent"
+            height=230,
+            width=1450,
+            fg_color="#E2E8F0",
+            corner_radius=20,
         )
-        self.actions_frame.place(x=40, y=120)
+        self.record_filter_frame.place(x=0, y=10)
+        Avatar(
+            self.record_filter_frame,
+            width=60,
+            height=60,
+            image=self.filter_icon,
+            fg_color=VIOLET,
+        ).place(x=30, y=20)
+        ctk.CTkLabel(
+            self.record_filter_frame,
+            text=" Record Filters",
+            font=("Poppins", 22, "bold"),
+            text_color="#1E293B",
+        ).place(x=100, y=30)
 
-        self.search_btn = ctk.CTkButton(
-            self.actions_frame,
+        ctk.CTkLabel(
+            self.record_filter_frame,
             text="Search",
-            font=("Inter", 15, "bold"),
-            text_color="#FFFFFF",
-            width=150,
-            height=55,
-            fg_color=PRIMARY,
-            hover_color=SECONDARY,
-            corner_radius=9,
-            command=self.handle_search,
-        )
-        self.search_btn.place(x=560, y=35)
+            font=("Poppins", 18),
+            text_color="#1E293B",
+        ).place(x=31, y=110)
 
         self.search_entry = ctk.CTkEntry(
-            self.actions_frame,
-            width=540,
-            height=55,
+            self.record_filter_frame,
+            width=360,
+            height=50,
             corner_radius=9,
-            font=("Roboto", 17),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
-            text_color=TEXT_PRIMARY,
-            border_width=2,
+            font=("Inter", 18),
+            fg_color="#D3D9E2",
+            text_color="#1E293B",
+            placeholder_text="Search records...",
+            placeholder_text_color="#64748B",
+            border_width=0,
         )
-        self.search_entry.place(x=5, y=35)
-        self.search_entry.bind("<KeyRelease>", lambda e: self.handle_search())
+
+        self.delete_search_btn = ctk.CTkButton(
+            self.record_filter_frame,
+            text="",
+            image=self.cross_icon,
+            fg_color="#D3D9E2",
+            width=0,
+            bg_color="#D3D9E2",
+            hover=False,
+            cursor="hand2",
+            command=self.delete_search,
+        )
+        self.search_entry.place(x=30, y=140)
+        self.delete_search_btn.place(x=340, y=148)
+
+        ctk.CTkLabel(
+            self.record_filter_frame,
+            text="Test Classification",
+            font=("Poppins", 18),
+            text_color="#1E293B",
+        ).place(x=511, y=110)
+
+        self.test_var = ctk.StringVar(value="All")
+
+        self.filter_test_menu = ctk.CTkOptionMenu(
+            self.record_filter_frame,
+            values=["All", "Safe", "Mild", "Moderate", "Severe"],
+            variable=self.test_var,
+            width=230,
+            height=50,
+            font=("Inter", 18),
+            fg_color="#D3D9E2",
+            button_color="#CBD5E1",
+            button_hover_color="#94A3B8",
+            text_color="#1E293B",
+            dropdown_fg_color="#FFFFFF",
+            dropdown_text_color="#0F172A",
+            dropdown_hover_color="#D4D6DA",
+            dropdown_font=("Inter", 20),
+            corner_radius=9,
+            command=lambda value: self.apply_filters(),
+        )
+
+        self.filter_test_menu.place(x=510, y=140)
+
+        ctk.CTkLabel(
+            self.record_filter_frame,
+            text="Eye Classification",
+            font=("Poppins", 18),
+            text_color="#1E293B",
+        ).place(x=851, y=110)
+
+        self.eye_var = ctk.StringVar(value="All")
+
+        self.filter_eye_menu = ctk.CTkOptionMenu(
+            self.record_filter_frame,
+            values=["All", "Safe", "Mild", "Moderate", "Severe"],
+            variable=self.eye_var,
+            width=230,
+            height=50,
+            font=("Inter", 18),
+            fg_color="#D3D9E2",
+            button_color="#CBD5E1",
+            button_hover_color="#94A3B8",
+            text_color="#1E293B",
+            dropdown_fg_color="#FFFFFF",
+            dropdown_text_color="#0F172A",
+            dropdown_hover_color="#D4D6DA",
+            dropdown_font=("Inter", 20),
+            corner_radius=9,
+            command=lambda value: self.apply_filters(),
+        )
+
+        self.filter_eye_menu.place(x=850, y=140)
+
+        ctk.CTkLabel(
+            self.record_filter_frame,
+            text="Risk Level",
+            font=("Poppins", 18),
+            text_color="#1E293B",
+        ).place(x=1191, y=110)
+        self.risk_var = ctk.StringVar(value="All")
+
+        self.filter_risk_menu = ctk.CTkOptionMenu(
+            self.record_filter_frame,
+            values=["All", "Safe", "Mild", "Moderate", "Severe"],
+            variable=self.risk_var,
+            width=230,
+            height=50,
+            font=("Inter", 18),
+            fg_color="#D3D9E2",
+            button_color="#CBD5E1",
+            button_hover_color="#94A3B8",
+            text_color="#1E293B",
+            dropdown_fg_color="#FFFFFF",
+            dropdown_text_color="#0F172A",
+            dropdown_hover_color="#D4D6DA",
+            dropdown_font=("Inter", 20),
+            corner_radius=9,
+            command=lambda value: self.apply_filters(),
+        )
+        self.filter_risk_menu.place(x=1190, y=140)
 
         self.table_container = ctk.CTkFrame(
             self,
-            width=1400,
-            height=670,
-            fg_color="transparent",
+            width=1450,
+            height=650,
+            corner_radius=20,
+            fg_color="#E2E8F0",
         )
-        self.table_container.place(x=40, y=230)
-
+        self.table_container.place(x=0, y=265)
         self.records_table = ctk.CTkFrame(
             self.table_container,
             fg_color="transparent",
-            width=1400,
-            height=670,
+            width=1410,
+            height=610,
         )
-
-        self.records_table.pack(fill="both", expand=True)
+        self.records_table.pack(fill="both", expand=True, padx=20, pady=20)
         self.records_table.pack_propagate(False)
 
         self.table_headers = [
@@ -116,15 +211,15 @@ class RecordsPage(ctk.CTkFrame):
             {
                 "text": "View",
                 # "icon": self.view_icon,
-                "color": "#3B82F6",
-                "hover": "#2563EB",
+                "color": BLUE,
+                "hover": BLUE_HOVER,
                 "command": self.view_record,
             },
             {
                 "text": "Print",
                 # "icon": self.print_icon,
-                "color": "#DC2626",
-                "hover": "#B91C1C",
+                "color": PINK,
+                "hover": PINK_HOVER,
                 "command": self.print_record,
             },
         ]
@@ -135,14 +230,13 @@ class RecordsPage(ctk.CTkFrame):
             scrollbar_button_color="#6B7280",
             scrollbar_button_hover_color="#4B5563",
         )
-        table_container.pack(fill="both", expand=True, pady=(10))
-
+        table_container.pack(fill="both", expand=True)
         self.table = DataTable(
             table_container,
             headers=self.table_headers,
             data=self.table_data,
             actions=self.table_actions,
-            table_width=230,
+            table_width=232,
             header_color=GREEN,
             row_color="#FFFFFF",
         )
@@ -151,29 +245,40 @@ class RecordsPage(ctk.CTkFrame):
             fill="both",
             expand=True,
         )
+        self.search_entry.bind("<KeyRelease>", lambda e: self.apply_filters())
 
-    def handle_search(self):
-        user = self.controller.current_user
-
-        if not user:
-            return
-
-        user_id = user[0]
+    def apply_filters(self):
         keyword = self.search_entry.get().strip()
+        test_class = self.test_var.get()
+        eye_class = self.eye_var.get()
+        risk_level = self.risk_var.get()
 
-        if not keyword:
-            records = self.controller.db.fetch_patient_records(user_id)
-        else:
-            records = self.controller.db.search_patient_records(user_id, keyword)
-
+        records = self.admin_db.filter_records(
+            keyword,
+            test_class,
+            eye_class,
+            risk_level,
+        )
         records = records or []
+
         self.full_records = records
+
         if records:
             table_data = [r.get("display", ("-", "-", "-", "-", "-")) for r in records]
         else:
-            table_data = [("No Results", "-", "-", "-", "-")]
+            table_data = [("No Results", "-", "-", "-", "-", "-")]
 
         self.table.update_data(table_data)
+
+    def delete_search(self):
+        self.search_entry.delete(0, ctk.END)
+        self.on_show()
+
+    def clear_fields(self):
+        self.search_entry.delete(0, ctk.END)
+        self.test_var.set("All")
+        self.eye_var.set("All")
+        self.risk_var.set("All")
 
     def on_show(self):
         user = self.controller.current_user
@@ -202,8 +307,8 @@ class RecordsPage(ctk.CTkFrame):
 
         record = self.full_records[index]
 
-        x = self.actions_frame.winfo_rootx()
-        y = self.actions_frame.winfo_rooty()
+        x = self.record_filter_frame.winfo_rootx()
+        y = self.record_filter_frame.winfo_rooty()
 
         self.top = RecordModal(self, row=record["full"], x=x, y=y)  # ✅ PASS DATA
 
@@ -533,6 +638,7 @@ class RecordModal(ctk.CTkToplevel):
         ).place(x=1200, y=630)
 
     def populate_data(self):
+
         from datetime import datetime
 
         data = self.row

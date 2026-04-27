@@ -15,7 +15,7 @@ from constants.seeds import (
     RED,
     DISTANCE,
     EYE,
-    CAMERA_TIPS,
+    TEMPERATURE_INSTRUCTION,
     CAMERA_PROMPT,
     RETRY,
     GREEN,
@@ -24,6 +24,8 @@ from constants.seeds import (
     ORANGE,
 )
 from ..components.avatar import Avatar
+from ..components.rectangle import Rectangle
+
 from CTkMessagebox import CTkMessagebox as mb
 
 
@@ -69,13 +71,13 @@ class ScanTemperaturePage(ctk.CTkFrame):
             text="Scan Temperature",
             font=("Arial", 33, "bold"),
             text_color=TEXT_PRIMARY,
-        ).place(x=40, y=10)
+        ).place(x=20, y=10)
         ctk.CTkLabel(
             self,
             text="Position your forehead from IR temperature sensor.",
             font=("Poppins", 20),
             text_color=TEXT_SECONDARY,
-        ).place(x=40, y=60)
+        ).place(x=20, y=60)
 
         self.container = ctk.CTkFrame(
             self,
@@ -86,7 +88,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
             border_color="#E2E8F0",
             corner_radius=15,
         )
-        self.container.place(x=40, y=100)
+        self.container.place(x=20, y=100)
 
         self.curr_progress = 0.0
         self.temp_bar = ctk.CTkProgressBar(
@@ -123,7 +125,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
             width=1000,
             fg_color="transparent",
         )
-        self.actions_container.place(x=40, y=750)
+        self.actions_container.place(x=40, y=760)
 
         self.countdown = 6
 
@@ -131,7 +133,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
             self.actions_container,
             image=self.scan_icon,
             width=150,
-            height=100,
+            height=110,
             text="",
             # fg_color=BLUE,
             # hover_color="#0284C7",
@@ -149,7 +151,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
             text="SCAN",
             font=("Inter", 16, "bold"),
             text_color=TEXT_SECONDARY,
-        ).place(relx=0.5, rely=0.85, anchor=ctk.CENTER)
+        ).place(relx=0.5, rely=0.90, anchor=ctk.CENTER)
 
         # self.retry_temp_btn = ctk.CTkButton(
         #     self.actions_container,
@@ -200,29 +202,29 @@ class ScanTemperaturePage(ctk.CTkFrame):
             border_color="#E2E8F0",
             corner_radius=15,
         )
-        self.instruction_container.place(x=1070, y=100)
+        self.instruction_container.place(x=1060, y=100)
 
-        Avatar(
+        Rectangle(
             self.instruction_container,
             image=self.check_icon,
-            width=40,
-            height=40,
+            width=50,
+            height=50,
             fg_color="#14B8A6",
-        ).place(x=30, y=30)
+        ).place(x=20, y=30)
 
         ctk.CTkLabel(
             self.instruction_container,
-            text="Best Position Guide",
+            text="Instructions",
             text_color=TEXT_PRIMARY,
             font=("Inter", 20),
-        ).place(x=80, y=35)
+        ).place(x=85, y=35)
 
         ctk.CTkLabel(
             self,
             text="IDEAL POSITION",
             font=("Inter", 16, "bold"),
             text_color=TEXT_SECONDARY,
-        ).place(x=1075, y=560)
+        ).place(x=1065, y=560)
 
         self.prompt_container = ctk.CTkFrame(
             self,
@@ -233,7 +235,7 @@ class ScanTemperaturePage(ctk.CTkFrame):
             border_color="#E2E8F0",
             corner_radius=15,
         )
-        self.prompt_container.place(x=1070, y=595)
+        self.prompt_container.place(x=1060, y=595)
 
         self.camera_prompt = ctk.CTkFrame(
             self.prompt_container,
@@ -458,10 +460,10 @@ class ScanTemperaturePage(ctk.CTkFrame):
             )
 
     def card_builder(self):
-        start_y = 90
+        start_y = 100
         gap = 80
 
-        for i, item in enumerate(CAMERA_TIPS):
+        for i, item in enumerate(TEMPERATURE_INSTRUCTION):
             y_position = start_y + (i * gap)
 
             card = ctk.CTkFrame(

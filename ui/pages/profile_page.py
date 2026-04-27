@@ -4,30 +4,13 @@ from constants.seeds import (
     TEXT_PRIMARY,
     TEXT_SECONDARY,
     GREEN,
-    CAMERA,
-    FLASH,
-    SAVE,
-    CHECK,
     BLUE,
-    RED,
-    EYE,
-    DISTANCE,
-    PRIMARY,
-    CAMERA_TIPS,
-    CAMERA_PROMPT,
-    RECOMMENDATIONS,
-    SECONDARY,
-    QUESTIONS,
-    CHEVRON_LEFT,
-    CHEVRON_RIGHT,
-    YELLOW,
+    PINK,
+    AVATAR_USER,
     VERIFIED,
 )
 from ..components.avatar import Avatar
 from ..components.avatar_profile import AvatarProfile
-from ..components.messagebox import MessageBox as mb
-from ..components.data_table import DataTable
-from ..components.rectangle import Rectangle
 
 
 class ProfilePage(ctk.CTkFrame):
@@ -42,60 +25,39 @@ class ProfilePage(ctk.CTkFrame):
         self.controller = controller
 
         self.verified_icon = ctk.CTkImage(Image.open(VERIFIED), size=(20, 20))
+        self.avatar_user = ctk.CTkImage(Image.open(AVATAR_USER), size=(30, 30))
 
-        ctk.CTkLabel(
-            self, text="Profile", font=("Arial", 33, "bold"), text_color=TEXT_PRIMARY
-        ).place(x=40, y=10)
-
-        self.container = ctk.CTkFrame(
+        self.profile_frame = ctk.CTkFrame(
             self,
-            width=1400,
-            height=660,
-            # fg_color="#F8FAFC",
-            # border_width=2,
-            # border_color="#E2E8F0",
-            # corner_radius=20,
-            fg_color="transparent",
+            height=230,
+            width=1450,
+            fg_color="#E2E8F0",
+            corner_radius=20,
         )
-        self.container.place(x=40, y=80)
+        self.profile_frame.place(x=0, y=10)
 
         self.avatar = AvatarProfile(
-            self.container,
-            width=160,
-            height=160,
+            self.profile_frame,
+            width=115,
+            height=115,
             fg_color=GREEN,
             text_color="#FFFFFF",
             text="XX",
-            font=("Inter", 55, "bold"),
+            font=("Inter", 45, "bold"),
         )
-        self.avatar.place(x=60, y=50)
+        self.avatar.place(x=30, y=40)
 
-        # self.name = ctk.CTkLabel(
-        #     self.container,
-        #     text_color=TEXT_PRIMARY,
-        #     font=("Arial", 32, "bold"),
-        #     text="",
-        # )
-
-        # self.name.place(x=300, y=50)
-
-        # self.badge = Avatar(
-        #     self.container,
-        #     width=34,
-        #     height=34,
-        #     image=self.verified_icon,
-        #     fg_color=BLUE,
-        # )
-
-        # Wrapper frame
-        self.name_container = ctk.CTkFrame(self.container, fg_color="transparent")
-        self.name_container.place(x=300, y=50)
+        self.name_container = ctk.CTkFrame(
+            self.profile_frame,
+            fg_color="transparent",
+        )
+        self.name_container.place(x=170, y=70)
 
         # Name
         self.name = ctk.CTkLabel(
             self.name_container,
             text_color=TEXT_PRIMARY,
-            font=("Arial", 32, "bold"),
+            font=("Arial", 30, "bold"),
             text="",
         )
         self.name.pack(side="left")
@@ -110,149 +72,156 @@ class ProfilePage(ctk.CTkFrame):
         )
 
         self.email = ctk.CTkLabel(
-            self.container,
+            self.profile_frame,
             text_color=TEXT_PRIMARY,
             font=("Poppins", 20),
             text="",
         )
 
-        self.email.place(x=300, y=95)
+        self.email.place(x=170, y=110)
 
-        ctk.CTkButton(
-            self.container,
-            width=170,
-            height=55,
-            fg_color=GREEN,
-            text="Edit Profile",
-            text_color="#FFFFFF",
-            font=("Arial", 22, "bold"),
-        ).place(x=300, y=140)
+        self.personal_info_frame = ctk.CTkFrame(
+            self,
+            height=500,
+            width=1450,
+            fg_color="#E2E8F0",
+            corner_radius=20,
+        )
+        self.personal_info_frame.place(x=0, y=270)
+
+        Avatar(
+            self.personal_info_frame,
+            width=60,
+            height=60,
+            image=self.avatar_user,
+            fg_color=PINK,
+        ).place(x=30, y=30)
+
+        ctk.CTkLabel(
+            self.personal_info_frame,
+            text_color="#1E293B",
+            font=("Arial", 24, "bold"),
+            text="Personal Information",
+        ).place(x=105, y=40)
 
         self.divider = ctk.CTkFrame(
-            self.container, height=5, fg_color="#E2E8F0", width=1030
+            self.personal_info_frame, height=5, fg_color="#D4D6DA", width=1370
         )
-        self.divider.place(x=300, y=230)
+        self.divider.place(x=40, y=105)
 
         ctk.CTkLabel(
-            self.container,
-            text_color=TEXT_PRIMARY,
-            font=("Arial", 26, "bold"),
-            text="Account Details",
-        ).place(x=300, y=270)
-
-        ctk.CTkLabel(
-            self.container,
-            text_color=TEXT_SECONDARY,
-            font=("Roboto", 20),
+            self.personal_info_frame,
+            font=("Poppins", 19),
+            text_color="#1E293B",
             text="Full Name",
-        ).place(x=300, y=350)
+        ).place(x=41, y=130)
 
         self.full_name_entry = ctk.CTkEntry(
-            self.container,
-            width=370,
-            height=60,
+            self.personal_info_frame,
+            width=450,
+            height=55,
             corner_radius=9,
             font=("Roboto", 20),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
+            fg_color="#EEF2F7",
+            border_color="#CBD5E1",
             text_color=TEXT_SECONDARY,
         )
-        self.full_name_entry.place(x=410, y=340)
+        self.full_name_entry.place(x=40, y=170)
 
         ctk.CTkLabel(
-            self.container,
-            text_color=TEXT_SECONDARY,
-            font=("Roboto", 20),
+            self.personal_info_frame,
+            font=("Poppins", 19),
+            text_color="#1E293B",
             text="Phone",
-        ).place(x=880, y=350)
+        ).place(x=961, y=130)
 
         self.phone_number_entry = ctk.CTkEntry(
-            self.container,
-            width=370,
-            height=60,
+            self.personal_info_frame,
+            width=450,
+            height=55,
             corner_radius=9,
             font=("Roboto", 20),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
+            fg_color="#EEF2F7",
+            border_color="#CBD5E1",
             text_color=TEXT_SECONDARY,
         )
-        self.phone_number_entry.place(x=960, y=340)
+        self.phone_number_entry.place(x=960, y=170)
 
         ctk.CTkLabel(
-            self.container,
-            text_color=TEXT_SECONDARY,
-            font=("Roboto", 20),
+            self.personal_info_frame,
+            font=("Poppins", 19),
+            text_color="#1E293B",
             text="Email",
-        ).place(x=300, y=450)
+        ).place(x=41, y=235)
 
         self.email_entry = ctk.CTkEntry(
-            self.container,
-            width=370,
-            height=60,
+            self.personal_info_frame,
+            width=450,
+            height=55,
             corner_radius=9,
             font=("Roboto", 20),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
+            fg_color="#EEF2F7",
+            border_color="#CBD5E1",
             text_color=TEXT_SECONDARY,
         )
-        self.email_entry.place(x=410, y=440)
+        self.email_entry.place(x=40, y=265)
 
         ctk.CTkLabel(
-            self.container,
-            text_color=TEXT_SECONDARY,
-            font=("Roboto", 20),
+            self.personal_info_frame,
+            font=("Poppins", 19),
+            text_color="#1E293B",
             text="Status",
-        ).place(x=880, y=450)
+        ).place(x=961, y=235)
 
         self.status_entry = ctk.CTkEntry(
-            self.container,
-            width=370,
-            height=60,
+            self.personal_info_frame,
+            width=450,
+            height=55,
             corner_radius=9,
             font=("Roboto", 20),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
+            fg_color="#EEF2F7",
+            border_color="#CBD5E1",
             text_color=TEXT_SECONDARY,
         )
-        self.status_entry.place(x=960, y=440)
+        self.status_entry.place(x=960, y=265)
 
         ctk.CTkLabel(
-            self.container,
-            text_color=TEXT_SECONDARY,
-            font=("Roboto", 20),
+            self.personal_info_frame,
+            font=("Poppins", 19),
+            text_color="#1E293B",
             text="Joined At",
-        ).place(x=300, y=550)
+        ).place(x=41, y=330)
 
         self.created_at_entry = ctk.CTkEntry(
-            self.container,
-            width=370,
-            height=60,
+            self.personal_info_frame,
+            width=450,
+            height=55,
             corner_radius=9,
             font=("Roboto", 20),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
+            fg_color="#EEF2F7",
+            border_color="#CBD5E1",
             text_color=TEXT_SECONDARY,
         )
-        self.created_at_entry.place(x=410, y=540)
+        self.created_at_entry.place(x=40, y=360)
 
         ctk.CTkLabel(
-            self.container,
-            text_color=TEXT_SECONDARY,
-            font=("Roboto", 20),
+            self.personal_info_frame,
+            font=("Poppins", 19),
+            text_color="#1E293B",
             text="Last Login",
-        ).place(x=845, y=550)
+        ).place(x=961, y=330)
 
         self.last_login_entry = ctk.CTkEntry(
-            self.container,
-            width=370,
-            height=60,
+            self.personal_info_frame,
+            width=450,
+            height=55,
             corner_radius=9,
             font=("Roboto", 20),
-            fg_color="#F8FAFC",
-            border_color="#E2E8F0",
+            fg_color="#EEF2F7",
+            border_color="#CBD5E1",
             text_color=TEXT_SECONDARY,
         )
-        self.last_login_entry.place(x=960, y=540)
+        self.last_login_entry.place(x=960, y=360)
 
     def get_avatar_initials(self, full_name: str):
         if not full_name:

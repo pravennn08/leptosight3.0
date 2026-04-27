@@ -4,7 +4,7 @@ import math
 
 class AnimatedLineChart(ctk.CTkFrame):
 
-    def __init__(self, master, title=None, lines_config=None, bg="#F8FAFC", **kwargs):
+    def __init__(self, master, title=None, lines_config=None, bg="#E2E8F0", **kwargs):
         super().__init__(master, fg_color="transparent", **kwargs)
 
         self.title = title
@@ -40,7 +40,7 @@ class AnimatedLineChart(ctk.CTkFrame):
             text_color="#FFFFFF",
             dropdown_fg_color="#FFFFFF",
             dropdown_text_color="#0F172A",
-            dropdown_hover_color="#E2E8F0",
+            dropdown_hover_color="#D4D6DA",
             dropdown_font=("Inter", 18),
             corner_radius=9,
         )
@@ -107,7 +107,13 @@ class AnimatedLineChart(ctk.CTkFrame):
             y = top_pad + (chart_height / steps) * i
             value = scale_max - (scale_max / steps) * i
 
-            self.canvas.create_line(left_pad, y, W - right_pad, y, fill="#E5E7EB")
+            self.canvas.create_line(
+                left_pad,
+                y,
+                W - right_pad,
+                y,
+                fill="#CBD5E1",
+            )
 
             self.canvas.create_text(
                 30,

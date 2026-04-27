@@ -155,29 +155,41 @@ class AutomateReceipt:
         self.add(self.center("DISCLAIMER"), bold=True)
         self.add(self.line)
 
-        self.add(self.center("AI-assisted screening only."))
-        self.add(self.center("Not a medical diagnosis."))
-        self.add(self.center("Consult a licensed physician."))
+        # self.add(self.center("AI-assisted screening only."))
+        # self.add(self.center("Not a medical diagnosis."))
+        # self.add(self.center("Consult a licensed physician."))
+
+        self.add(
+            self.center(
+                "This result is based on AI-\nassisted screening and is inte-\nnded for preliminary assessment only."
+            )
+        )
+        self.add(self.center("It is not a medical diagnosis."))
+        self.add(
+            self.center(
+                "Please consult a licensed \nphysician for proper evaluation\nand confirmation."
+            )
+        )
 
         # BUILD
         self.doc.build(self.story)
 
 
 # TEST CODE
-# receipt = AutomateReceipt(
-#     filename="hehe.pdf",
-#     date="2026-04-04",
-#     time="12:09 AM",
-#     patient_id="P-001",
-#     patient_name="Juan Dela Cruz",
-#     contact_number="09123456789",
-#     temperature=36.2,
-#     test_result="Safe",
-#     test_confidence="92%",
-#     eye_classification="NORMAL",
-#     eye_confidence="85%",
-#     risk_level="LOW",
-#     recommendation="Recommend practicing preventive measures, avoiding floodwater exposure, and maintaining good hygiene.",
-# )
+receipt = AutomateReceipt(
+    filename="hehe.pdf",
+    date="2026-04-04",
+    time="12:09 AM",
+    patient_id="P-001",
+    patient_name="Juan Dela Cruz",
+    contact_number="09123456789",
+    temperature=36.2,
+    test_classification="Safe",
+    test_confidence="92%",
+    eye_classification="NORMAL",
+    eye_confidence="85%",
+    risk_level="LOW",
+    recommendation="Recommend practicing preventive measures, avoiding floodwater exposure, and maintaining good hygiene.",
+)
 
-# receipt.build()
+receipt.build()

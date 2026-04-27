@@ -2,6 +2,8 @@ import customtkinter as ctk
 import re
 from service.service import DatabaseService
 from service.admin_service import AdminDatabaseService
+from models.test_classification_model import TestClassificationModel
+from models.eye_classification_model import EyeClassificationModel
 from constants.seeds import BACKGROUND
 from .components.sidebar import AppSideBar
 from .components.navbar import AppNavBar
@@ -38,6 +40,10 @@ class App(ctk.CTk):
         self.db = DatabaseService()
         self.admin_db = AdminDatabaseService()
 
+        # MODELS
+        self.test_model = TestClassificationModel()
+        self.eye_model = EyeClassificationModel()
+
         # AUTH SESSION
         self.current_user = None
         self.recovery_user = None
@@ -45,7 +51,7 @@ class App(ctk.CTk):
 
         # SIDEBAR (LEFT)
         self.sidebar = AppSideBar(self, self)
-        self.sidebar.pack(side="left", fill="y", pady=10, padx=10)
+        self.sidebar.pack(side="left", fill="y", pady=0, padx=10)
 
         # RIGHT SIDE CONTAINER
         self.container = ctk.CTkFrame(self, fg_color=BACKGROUND)

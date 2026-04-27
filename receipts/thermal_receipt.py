@@ -181,9 +181,13 @@ class ThermalPrinter:
 
         # DISCLAIMER
         self.section("Disclaimer")
-        self.wrapped_text("AI-assisted screening only.")
-        self.wrapped_text("Not a medical diagnosis.")
-        self.wrapped_text("Consult a licensed physician.")
+        self.wrapped_text(
+            "This result is based on AI-assisted screening and is intended for preliminary assessment only."
+        )
+        self.wrapped_text("It is not a medical diagnosis.")
+        self.wrapped_text(
+            "Please consult a licensed physician for proper evaluation and confirmation."
+        )
 
         self.write("\n\n")
 

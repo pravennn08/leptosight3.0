@@ -119,6 +119,7 @@ class SignInPage(ctk.CTkFrame):
             font=("Roboto", 20),
             fg_color="#E2E8F0",
             text_color=TEXT_SECONDARY,
+            show="*",
             border_width=0,
         )
         self.password_entry.place(x=30, y=405)
@@ -433,77 +434,3 @@ class SignInPage(ctk.CTkFrame):
         self.password_entry.delete(0, ctk.END)
         self.email_entry.configure(placeholder_text="Email")
         self.password_entry.configure(placeholder_text="Password")
-
-
-#     def open_modal(self):
-#         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-#             x = self.container.winfo_rootx()
-#             y = self.container.winfo_rooty()
-#             self.toplevel_window = ToplevelWindow(self.winfo_toplevel())
-#             self.toplevel_window.geometry(f"+{x-80}+{y-80}")
-
-#         # # Base text
-
-#         # ctk.CTkLabel(
-#         #     self.container,
-#         #     text="By signing in, you agree to our",
-#         #     text_color=TEXT_SECONDARY,
-#         #     font=("Roboto", 14),
-#         # ).place(relx=0.3, y=530, anchor="center")
-
-#         # # Terms and Condition (teal clickable)
-#         # terms = ctk.CTkLabel(
-#         #     self.container,
-#         #     text="Terms and Conditions",
-#         #     text_color=PRIMARY,  # TEAL
-#         #     font=("Roboto", 14, "underline"),
-#         #     cursor="hand2",
-#         # )
-#         # terms.place(relx=0.70, y=530, anchor="center")
-
-#         # # "and"
-#         # ctk.CTkLabel(
-#         #     self.container,
-#         #     text="and",
-#         #     text_color=TEXT_SECONDARY,
-#         #     font=("Roboto", 14),
-#         # ).place(relx=0.5, y=550, anchor="center")
-
-#         # # Privacy Policy (teal clickable)
-#         # privacy = ctk.CTkLabel(
-#         #     self.container,
-#         #     text="Privacy Policy",
-#         #     text_color=PRIMARY,  # TEAL
-#         #     font=("Roboto", 14, "underline"),
-#         #     cursor="hand2",
-#         # )
-#         # privacy.place(relx=0.65, y=550, anchor="center")
-
-
-# class ToplevelWindow(ctk.CTkToplevel):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(
-#             *args,
-#             **kwargs,
-#             fg_color=BACKGROUND,
-#         )
-#         self.geometry("600x600")
-#         self.grab_set()
-#         self.title("Forgot Password")
-
-#         self.container = ctk.CTkFrame(
-#             self,
-#             width=550,
-#             height=550,
-#             corner_radius=15,
-#             fg_color="#F8FAFC",
-#             border_width=1,
-#             border_color="#E2E8F0",
-#         )
-#         self.container.pack(pady=25, padx=20)
-
-#         ctk.CTkLabel(
-#             self.container,
-#             text="Forgot Password",
-#             font=("Poppins", 25),
-#         ).place(relx=0.5, rely=0.1, anchor=ctk.N)

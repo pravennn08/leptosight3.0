@@ -19,6 +19,7 @@ from constants.seeds import (
     PLUS,
     PRINTER,
     SECONDARY,
+    VIOLET_HOVER,
     EYE,
     PERCENT,
 )
@@ -27,6 +28,8 @@ from ..components.avatar import Avatar
 from CTkMessagebox import CTkMessagebox as mb
 from ..components.square import Square
 from ..components.animated_horizontal_bar_chart import AnimatedHorizontalBarChart
+from ..components.animated_result_chart import AnimatedResultLineChart
+
 from receipts.automate_receipt import AutomateReceipt
 from receipts.thermal_receipt import ThermalPrinter
 
@@ -35,10 +38,11 @@ class ResultsPage(ctk.CTkFrame):
     def __init__(self, master, controller):
         super().__init__(
             master,
-            fg_color="#F8FAFC",
-            border_width=2,
-            border_color="#E2E8F0",
-            corner_radius=15,
+            # fg_color="#F8FAFC",
+            # border_width=2,
+            # border_color="#E2E8F0",
+            fg_color="transparent",
+            # corner_radius=15,
         )
         self.controller = controller
 
@@ -64,38 +68,36 @@ class ResultsPage(ctk.CTkFrame):
         ctk.CTkLabel(
             self,
             text="Pre-Diagnostic Results",
-            font=("Inter", 35),
+            font=("Arial", 33, "bold"),
             text_color=TEXT_PRIMARY,
-        ).place(x=40, y=40)
+        ).place(x=20, y=10)
         ctk.CTkLabel(
             self,
             text="Overview of your screening results and health insights",
             font=("Poppins", 20),
             text_color=TEXT_SECONDARY,
-        ).place(x=40, y=90)
+        ).place(x=20, y=60)
         self.value_labels = []
         self.status_labels = []
-        self.card_positions = [40, 290, 540, 790]
+        self.card_positions = [20, 275, 530, 785]
 
         self.results_data = [
             {"title": "Temperature", "value": "--", "status": "--"},
             {"title": "Test Result", "value": "--", "status": "--"},
             {"title": "Eye Scan", "value": "--", "status": "--"},
-            {"title": "Risk Level", "value": "", "status": ""},
+            {"title": "Risk Level", "value": "--", "status": "--"},
         ]
 
         self.build_result_cards()
 
         self.graphs_container = ctk.CTkFrame(self, fg_color="transparent")
-        self.graphs_container.place(x=40, y=310)
+        self.graphs_container.place(x=20, y=270)
 
         self.bar_container = ctk.CTkFrame(
             self.graphs_container,
-            width=985,
-            height=410,
-            fg_color="#F8FAFC",
-            border_width=2,
-            border_color="#E2E8F0",
+            width=490,
+            height=450,
+            fg_color="#E2E8F0",
             corner_radius=20,
         )
 
@@ -107,17 +109,53 @@ class ResultsPage(ctk.CTkFrame):
         )
         self.bar_container.pack_propagate(False)
 
-        self.recommendation_container = ctk.CTkFrame(
-            self,
-            width=980,
-            height=160,
-            fg_color="#F8FAFC",
-            border_width=2,
-            border_color="#E2E8F0",
+        # self.line_container = ctk.CTkFrame(
+        #     self.graphs_container,
+        #     width=490,
+        #     height=450,
+        #     fg_color="#F8FAFC",
+        #     border_width=2,
+        #     border_color="#E2E8F0",
+        #     corner_radius=20,
+        # )
+
+        # self.line_container.pack(
+        #     side="left",
+        #     fill="both",
+        #     expand=True,
+        #     padx=(10, 10),
+        # )
+        # self.line_container.pack_propagate(False)
+        # self.line_inner = ctk.CTkFrame(self.line_container, fg_color="transparent")
+        # self.line_inner.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self.line_container = ctk.CTkFrame(
+            self.graphs_container,
+            width=490,
+            height=450,
+            fg_color="#E2E8F0",
             corner_radius=20,
         )
 
-        self.recommendation_container.place(x=40, y=740)
+        self.line_container.pack(side="left", fill="both", expand=True, padx=(10, 10))
+        self.line_container.pack_propagate(False)
+
+        self.line_inner = ctk.CTkFrame(self.line_container, fg_color="transparent")
+        self.line_inner.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # ✅ CREATE CHART
+        self.result_chart = AnimatedResultLineChart(self.line_inner)
+        self.result_chart.pack(fill="both", expand=True)
+
+        self.recommendation_container = ctk.CTkFrame(
+            self,
+            width=1005,
+            height=160,
+            fg_color="#E2E8F0",
+            corner_radius=20,
+        )
+
+        self.recommendation_container.place(x=20, y=740)
         Avatar(
             self.recommendation_container,
             image=self.recommendation_icon,
@@ -145,7 +183,7 @@ class ResultsPage(ctk.CTkFrame):
         self.recommendation_label = ctk.CTkLabel(
             self.recommendation_container,
             text_color="#0F172A",
-            wraplength=880,
+            wraplength=900,
             font=("Poppins", 17.5),
             text="",
             anchor="w",
@@ -157,14 +195,12 @@ class ResultsPage(ctk.CTkFrame):
         self.receipt_container = ctk.CTkFrame(
             self,
             width=405,
-            height=550,
-            fg_color="#F8FAFC",
-            border_width=2,
-            border_color="#E2E8F0",
+            height=590,
+            fg_color="#E2E8F0",
             corner_radius=20,
         )
 
-        self.receipt_container.place(x=1045, y=140)
+        self.receipt_container.place(x=1045, y=100)
 
         Avatar(
             self.receipt_container,
@@ -184,7 +220,7 @@ class ResultsPage(ctk.CTkFrame):
         self.pdf_preview = ctk.CTkFrame(
             self.receipt_container,
             width=380,
-            height=445,
+            height=480,
             fg_color="transparent",
         )
         self.pdf_preview.place(x=10, y=85)
@@ -193,9 +229,7 @@ class ResultsPage(ctk.CTkFrame):
             self,
             width=405,
             height=190,
-            fg_color="#F8FAFC",
-            border_width=2,
-            border_color="#E2E8F0",
+            fg_color="#E2E8F0",
             corner_radius=20,
         )
 
@@ -205,6 +239,7 @@ class ResultsPage(ctk.CTkFrame):
             text="Print",
             fg_color=VIOLET,
             text_color="#FFFFFF",
+            hover_color=VIOLET_HOVER,
             width=360,
             height=60,
             font=("Inter", 20, "bold"),
@@ -217,7 +252,8 @@ class ResultsPage(ctk.CTkFrame):
         ctk.CTkButton(
             self.actions_container,
             text="Test Again",
-            fg_color=GREEN,
+            fg_color=PRIMARY,
+            hover_color=SECONDARY,
             text_color="#FFFFFF",
             width=360,
             height=60,
@@ -264,7 +300,7 @@ class ResultsPage(ctk.CTkFrame):
                 scrollbar_button_hover_color="#94A3B8",
                 # fg_color="red",
                 width=365,
-                height=440,
+                height=475,
             )
             scroll.pack(fill="both", expand=True)
 
@@ -388,8 +424,8 @@ class ResultsPage(ctk.CTkFrame):
 
     def build_result_cards(self):
 
-        START_Y = 140
-        WIDTH = 235
+        START_Y = 100
+        WIDTH = 237
         HEIGHT = 150
 
         self.value_labels = []  # reset
@@ -402,9 +438,7 @@ class ResultsPage(ctk.CTkFrame):
                 self,
                 width=WIDTH,
                 height=HEIGHT,
-                fg_color="#F8FAFC",
-                border_width=2,
-                border_color="#E2E8F0",
+                fg_color="#E2E8F0",
                 corner_radius=20,
             )
             card.place(x=x_position, y=START_Y)
@@ -428,11 +462,19 @@ class ResultsPage(ctk.CTkFrame):
                 text_color=TEXT_SECONDARY,
             ).place(x=90, y=25)
 
+            val = item["value"]
+
+            # ✅ Adjust font size based on value
+            if val and val.upper() == "MODERATE":
+                font_size = 24
+            else:
+                font_size = 32
+
             # ✅ VALUE
             value_label = ctk.CTkLabel(
                 card,
                 text=item["value"],
-                font=("Poppins", 30),
+                font=("Poppins", font_size),
                 text_color=TEXT_PRIMARY,
             )
             value_label.place(x=90, y=55)
@@ -440,16 +482,10 @@ class ResultsPage(ctk.CTkFrame):
             # ✅ STATUS
             status = item["status"]
 
-            # ✅ Adjust font size based on value
-            if status and status.upper() == "MODERATE":
-                font_size = 12
-            else:
-                font_size = 15
-
             status_label = ctk.CTkLabel(
                 card,
                 text=status,
-                font=("Inter", font_size, "bold"),
+                font=("Inter", 15, "bold"),
                 text_color=color,
             )
             status_label.place(x=90, y=100)
@@ -524,49 +560,104 @@ class ResultsPage(ctk.CTkFrame):
         ]
         self.update_result_cards()
 
+        # import random
+
+        # top_factors = result.get("top_factors")
+
+        # if top_factors:
+
+        #     # ✅ Sort highest score first
+        #     top_factors = sorted(top_factors, key=lambda x: x["score"], reverse=True)
+
+        #     # ✅ Your available colors ONLY
+        #     COLOR_POOL = [RED, VIOLET, YELLOW, PINK, BLUE, GREEN]
+
+        #     # ✅ Shuffle for randomness
+        #     colors = COLOR_POOL.copy()
+        #     random.shuffle(colors)
+
+        #     # ✅ Build lines_config dynamically
+        #     lines_config = [
+        #         {
+        #             "label": item["feature"],
+        #             "color": colors[i % len(colors)],  # loop if more features
+        #         }
+        #         for i, item in enumerate(top_factors)
+        #     ]
+
+        #     # ✅ Create chart only once
+        #     if not hasattr(self, "patient_chart"):
+        #         self.patient_chart = AnimatedHorizontalBarChart(
+        #             self.bar_container,
+        #             title="Top 5 Contributing Features(SHAP Values)",
+        #             lines_config=lines_config,
+        #         )
+        #         self.patient_chart.pack(fill="both", expand=True, padx=10, pady=10)
+
+        #     else:
+        #         self.patient_chart.lines_config = lines_config
+
+        #     # ✅ Update chart data
+        #     self.patient_chart.update_chart(top_factors)
+
+        # else:
+        #     print("No top factors available")
+
         import random
+        import ast
 
         top_factors = result.get("top_factors")
 
-        if top_factors:
+        # 🔥 Fix parsing
+        if isinstance(top_factors, str):
+            try:
+                top_factors = ast.literal_eval(top_factors)
+            except:
+                top_factors = None
 
-            # ✅ Sort highest score first
-            top_factors = sorted(top_factors, key=lambda x: x["score"], reverse=True)
+        # ✅ Validate
+        if not isinstance(top_factors, list):
+            top_factors = None
 
-            # ✅ Your available colors ONLY
-            COLOR_POOL = [RED, VIOLET, YELLOW, PINK, BLUE, GREEN]
-
-            # ✅ Shuffle for randomness
-            colors = COLOR_POOL.copy()
-            random.shuffle(colors)
-
-            # ✅ Build lines_config dynamically
-            lines_config = [
-                {
-                    "label": item["feature"],
-                    "color": colors[i % len(colors)],  # loop if more features
-                }
-                for i, item in enumerate(top_factors)
+        # ✅ Dummy fallback
+        if not top_factors:
+            top_factors = [
+                {"feature": "Temperature", "score": 0.82},
+                {"feature": "Calf Pain", "score": 0.55},
+                {"feature": "Flood Exposure", "score": 0.33},
+                {"feature": "Headache", "score": -0.68},
+                {"feature": "Nausea", "score": -0.45},
+                {"feature": "Skin Changes", "score": -0.22},
             ]
+        # ✅ ALWAYS process after
+        top_factors = sorted(top_factors, key=lambda x: x["score"], reverse=True)
 
-            # ✅ Create chart only once
-            if not hasattr(self, "patient_chart"):
-                self.patient_chart = AnimatedHorizontalBarChart(
-                    self.bar_container,
-                    title="Top Contributing Factors",
-                    lines_config=lines_config,
-                )
-                self.patient_chart.pack(fill="both", expand=True, padx=10, pady=10)
+        COLOR_POOL = [RED, VIOLET, YELLOW, PINK, BLUE, GREEN]
+        colors = COLOR_POOL.copy()
+        random.shuffle(colors)
 
-            else:
-                self.patient_chart.lines_config = lines_config
+        lines_config = [
+            {
+                "label": item["feature"],
+                "color": colors[i % len(colors)],
+            }
+            for i, item in enumerate(top_factors)
+        ]
 
-            # ✅ Update chart data
-            self.patient_chart.update_chart(top_factors)
-
+        if not hasattr(self, "patient_chart"):
+            self.patient_chart = AnimatedHorizontalBarChart(
+                self.bar_container,
+                title="Top Contributing Factors",
+                lines_config=lines_config,
+            )
+            self.patient_chart.pack(fill="both", expand=True, padx=10, pady=10)
         else:
-            print("No top factors available")
-            # ✅ Recommendation (safe)
+            self.patient_chart.lines_config = lines_config
+
+        # 🔥 THIS WAS MISSING
+        self.patient_chart.update_chart(top_factors)
+
+        # ✅ Recommendation (safe)
         self.recommendation_label.configure(
             text=recommendation if recommendation else "No recommendation available."
         )
@@ -576,6 +667,72 @@ class ResultsPage(ctk.CTkFrame):
         self.controller.change_window("StartTestPage")
 
     def on_show(self):
+
+        import random
+        import ast
+
+        top_factors = None
+
+        # 🔥 Fix parsing
+        if isinstance(top_factors, str):
+            try:
+                top_factors = ast.literal_eval(top_factors)
+            except:
+                top_factors = None
+
+        # ✅ Validate
+        if not isinstance(top_factors, list):
+            top_factors = None
+
+        # ✅ Dummy fallback
+        if not top_factors:
+            top_factors = [
+                {"feature": "Temperature", "score": 0.82},
+                {"feature": "Calf Pain", "score": 0.55},
+                {"feature": "Flood Exposure", "score": 0.33},
+                {"feature": "Headache", "score": -0.77},
+                {"feature": "Nausea", "score": -0.45},
+                {"feature": "Skin Changes", "score": -0.22},
+            ]
+
+        # ✅ ALWAYS process after
+        top_factors = sorted(top_factors, key=lambda x: x["score"], reverse=True)
+
+        COLOR_POOL = [RED, VIOLET, YELLOW, PINK, BLUE, GREEN]
+        colors = COLOR_POOL.copy()
+        random.shuffle(colors)
+
+        lines_config = [
+            {
+                "label": item["feature"],
+                "color": colors[i % len(colors)],
+            }
+            for i, item in enumerate(top_factors)
+        ]
+
+        if not hasattr(self, "patient_chart"):
+            self.patient_chart = AnimatedHorizontalBarChart(
+                self.bar_container,
+                title="Top Contributing Features(SHAP Values)",
+                lines_config=lines_config,
+            )
+            self.patient_chart.pack(fill="both", expand=True, padx=10, pady=10)
+        else:
+            self.patient_chart.lines_config = lines_config
+
+        # 🔥 THIS WAS MISSING
+        self.patient_chart.update_chart(top_factors)
+
+        line_chart_data = [
+            {"session": "Session 1", "temp": 36.5, "test": 99, "eye": 62.44},
+            {"session": "Session 2", "temp": 37.2, "test": 55, "eye": 50},
+            {"session": "Session 3", "temp": 38.0, "test": 70, "eye": 65},
+            {"session": "Session 4", "temp": 37.5, "test": 60, "eye": 58},
+            {"session": "Session 5", "temp": 38.3, "test": 80, "eye": 75},
+        ]
+
+        self.after(500, lambda: self.result_chart.update_chart(line_chart_data))
+
         self.load_results()
-        self.generate_receipt()
-        self.reciept_preview()
+        # self.generate_receipt()
+        # self.reciept_preview()
